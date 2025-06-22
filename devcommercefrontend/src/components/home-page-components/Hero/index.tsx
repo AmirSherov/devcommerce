@@ -3,6 +3,7 @@ import React, { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
 import "./style.scss";
+import { Cover } from "@/components/ui/cover";
 
 const Hero = () => {
     const containerRef = useRef(null);
@@ -31,8 +32,9 @@ const Header = ({ translate }) => {
             style={{ translateY: translate }}
             className="hero-header"
         >
-            <h1>DevCommerce</h1>
-            <p>Продавайте и покупайте лучшие dev-ресурсы</p>
+            <h1 className="text-4xl md:text-4xl lg:text-6xl font-semibold max-w-7xl mx-auto text-center mt-6 relative z-20 py-6 bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 via-white to-white">
+                 DevCommerce <br /> лучшие <Cover>dev-ресурсы</Cover>
+            </h1>
         </motion.div>
     );
 };
