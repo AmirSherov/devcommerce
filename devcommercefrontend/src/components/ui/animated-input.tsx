@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -7,14 +7,27 @@ export interface InputProps
 }
 
 const AnimatedInput = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, ...props }, ref) => {
+  ({ className, type, label, value, onChange, ...props }, ref) => {
     const [focused, setFocused] = useState(false);
     const [hasValue, setHasValue] = useState(false);
 
+    // Update hasValue when value prop changes
+    useEffect(() => {
+      setHasValue(value !== undefined && value !== "");
+    }, [value]);
+
     const handleFocus = () => setFocused(true);
+    
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setFocused(false);
       setHasValue(e.target.value !== "");
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setHasValue(e.target.value !== "");
+      if (onChange) {
+        onChange(e);
+      }
     };
 
     return (
@@ -30,6 +43,8 @@ const AnimatedInput = React.forwardRef<HTMLInputElement, InputProps>(
           type={type}
           className="input-field"
           ref={ref}
+          value={value}
+          onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
           {...props}

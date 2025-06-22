@@ -5,7 +5,6 @@ import { Starfield } from "@/components/ui/starfield";
 export default function AuthPage() {
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      <Starfield />
       <GitHubBackground />
       <div className="relative z-20">
         <SimpleAuthForm />
