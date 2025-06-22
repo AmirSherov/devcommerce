@@ -1,0 +1,36 @@
+$bg-primary: #000000;
+$bg-secondary: #0a0a0a;
+$border-color: #1a1a1a;
+$text-primary: #ffffff;
+$text-secondary: #a0a0a0;
+$accent-blue: #ffffff;
+$accent-purple: #ffffff;
+$accent-gradient: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0.8));
+
+$font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$font-mono: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+
+$container-max-width: 1400px;
+$container-padding: 1rem;
+
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.5);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.5);
+$shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5), 0 6px 6px rgba(0, 0, 0, 0.5);
+$shadow-card: 
+  0 0 rgba(0, 0, 0, 0.5),
+  0 9px 20px rgba(0, 0, 0, 0.5),
+  0 37px 37px rgba(0, 0, 0, 0.4),
+  0 84px 50px rgba(0, 0, 0, 0.3);
+
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius-xl: 20px;
+
+$transition-default: all 0.3s ease;
+$transition-fast: all 0.15s ease; 

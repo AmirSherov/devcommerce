@@ -1,0 +1,153 @@
+@import '../../../app/variables.scss';
+
+.categories-section {
+  background-color: $bg-primary;
+  padding: 5rem 2rem;
+  
+  @media (max-width: $breakpoint-md) {
+    padding: 3rem 1rem;
+  }
+}
+
+.categories-container {
+  max-width: $container-max-width;
+  margin: 0 auto;
+}
+
+.categories-heading {
+  text-align: center;
+  margin-bottom: 4rem;
+  
+  h2 {
+    font-size: 2.5rem;
+    color: $text-primary;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    
+    @media (max-width: $breakpoint-md) {
+      font-size: 2rem;
+    }
+  }
+  
+  p {
+    font-size: 1.25rem;
+    color: $text-secondary;
+    max-width: 600px;
+    margin: 0 auto;
+    
+    @media (max-width: $breakpoint-md) {
+      font-size: 1rem;
+    }
+  }
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.category-card {
+  background-color: $bg-secondary;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  border: 1px solid $border-color;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    
+    .category-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+.category-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: $border-radius-md;
+  background-color: $bg-secondary !important;
+  border: 1px solid $border-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  svg {
+    width: 30px;
+    height: 30px;
+    color: $text-primary !important;
+  }
+}
+
+.category-info {
+  flex: 1;
+  
+  h3 {
+    font-size: 1.1rem;
+    color: $text-primary;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+  }
+  
+  .category-count {
+    font-size: 0.9rem;
+    color: $text-secondary;
+    display: block;
+  }
+}
+
+.category-arrow {
+  color: $text-secondary;
+  opacity: 0.6;
+  transform: translateX(-5px);
+  transition: all 0.3s ease;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.categories-all {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn-all-categories {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: $text-primary;
+  border: 1px solid $border-color;
+  padding: 0.75rem 1.5rem;
+  border-radius: $border-radius-md;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  svg {
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover svg {
+    transform: translateX(3px);
+  }
+} 

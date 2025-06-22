@@ -1,0 +1,145 @@
+@import '../../../app/variables.scss';
+
+.hero-container {
+  height: 150vh;
+  min-height: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+  background-color: $bg-primary;
+  width: 100%;
+  overflow: hidden;
+  
+  @media (max-width: 768px) {
+    height: 100vh;
+    min-height: 800px;
+  }
+}
+
+.hero-content {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  perspective: 1000px;
+  padding: 4rem 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+  }
+}
+
+.hero-header {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  color: $text-primary;
+  padding-bottom: 5rem;
+  
+  h1 {
+    font-family: var(--font-jetbrains-mono);
+    font-size: 5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: $text-primary;
+    
+    @media (max-width: 768px) {
+      font-size: 3rem;
+    }
+  }
+  
+  p {
+    font-size: 1.5rem;
+    color: $text-secondary;
+    
+    @media (max-width: 768px) {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+.hero-card {
+  width: 100%;
+  max-width: 900px;
+  height: 600px;
+  margin: -5rem auto 0;
+  border: 1px solid #222;
+  border-radius: 2rem;
+  background-color: #0c0d11;
+  padding: 1.25rem;
+  
+  @media (max-width: 768px) {
+    height: 450px;
+  }
+}
+
+.hero-card-content {
+  height: 100%;
+  width: 100%;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background-color: $bg-secondary;
+  position: relative;
+}
+
+.product-showcase {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.product {
+  background-color: $bg-secondary;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 220px;
+  text-align: center;
+  border: 1px solid $border-color;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 220px;
+  }
+}
+
+.product-icon {
+  background: $bg-secondary;
+  border: 1px solid $border-color;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  
+  svg {
+    width: 30px;
+    height: 30px;
+    color: $text-primary;
+  }
+}
+
+.product h3 {
+  color: $text-primary;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.product p {
+  color: $text-secondary;
+  font-size: 0.9rem;
+  line-height: 1.4;
+} 
