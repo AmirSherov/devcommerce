@@ -1,2 +1,87 @@
-/venv
-*venv
+# ---- Universal ----
+# OS metadata & editor settings
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files (keep examples)
+.env
+.env.*
+!.env.example
+
+# ---- Python / Django Backend ----
+# Byte-compiled / cached / distribution artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+
+# Python tooling
+.build/
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Test & coverage
+htmlcov/
+.tox/
+.nox/
+.coverage*
+.pytest_cache/
+
+# Django specific
+*.sqlite3
+db.sqlite3
+local_settings.py
+media/
+staticfiles/
+
+# ---- Node / Next.js Frontend ----
+# Package dependencies
+# (explicitly ignore the root-level & frontend directory node_modules)
+node_modules/
+devcommercefrontend/node_modules/
+
+# Next.js build output
+.next/
+devcommercefrontend/.next/
+
+# Production build artifacts
+out/
+next-static/
+
+# Frontend environment files
+.devcontainer/
+devcommercefrontend/.env.local
+devcommercefrontend/.env.*.local
+
+# ---- Miscellaneous ----
+# Compiled source maps
+*.map
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# End of file
