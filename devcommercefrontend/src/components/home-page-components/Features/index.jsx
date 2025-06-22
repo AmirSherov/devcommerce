@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
+import { CardSpotlight } from "@/components/ui/card-spotlight";
 import "./style.scss";
 
 const Features = () => {
@@ -69,17 +70,18 @@ const Features = () => {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              className="feature-card"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <div className="feature-icon">
-                {feature.icon}
-              </div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
+              <CardSpotlight className="feature-card-spotlight h-full" radius={300} color="#1e293b">
+                <div className="feature-icon">
+                  {feature.icon}
+                </div>
+                <h3 className="relative z-20">{feature.title}</h3>
+                <p className="relative z-20">{feature.description}</p>
+              </CardSpotlight>
             </motion.div>
           ))}
         </div>

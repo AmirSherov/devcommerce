@@ -1,9 +1,10 @@
 'use client'
 import React, { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import Image from "next/image";
 import "./style.scss";
 import { Cover } from "@/components/ui/cover";
+import { cn } from "@/lib/utils";
 
 const Hero = () => {
     const containerRef = useRef(null);
@@ -17,8 +18,8 @@ const Hero = () => {
     const translate = useTransform(scrollYProgress, [0, 1], [0, -100]);
 
     return (
-        <div ref={containerRef} className="hero-container">
-            <div className="hero-content">
+        <div ref={containerRef} className="hero-container relative">
+            <div className="hero-content relative z-20">
                 <Header translate={translate} />
                 <Card rotate={rotate} scale={scale} />
             </div>
@@ -26,7 +27,7 @@ const Hero = () => {
     );
 };
 
-const Header = ({ translate }) => {
+const Header = ({ translate }: { translate: MotionValue<number> }) => {
     return (
         <motion.div
             style={{ translateY: translate }}
@@ -39,7 +40,7 @@ const Header = ({ translate }) => {
     );
 };
 
-const Card = ({ rotate, scale }) => {
+const Card = ({ rotate, scale }: { rotate: MotionValue<number>, scale: MotionValue<number> }) => {
     return (
         <motion.div
             style={{

@@ -94,4 +94,56 @@
   font-size: 0.95rem;
   color: $text-secondary;
   line-height: 1.5;
+}
+
+// Card Spotlight стили
+.feature-card-spotlight {
+  background-color: $bg-secondary !important;
+  border: 1px solid $border-color !important;
+  border-radius: $border-radius-lg !important;
+  padding: 2rem !important;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    
+    .feature-icon {
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  }
+  
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: $border-radius-md;
+    background-color: $bg-secondary;
+    border: 1px solid $border-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.3s ease;
+    position: relative;
+    z-index: 20;
+    
+    svg {
+      width: 32px;
+      height: 32px;
+      color: $text-primary;
+    }
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    color: $text-primary;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 0.95rem;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
 } 
