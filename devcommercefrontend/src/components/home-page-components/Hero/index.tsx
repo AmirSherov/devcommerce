@@ -5,6 +5,8 @@ import Image from "next/image";
 import "./style.scss";
 import { Cover } from "@/components/ui/cover";
 import { cn } from "@/lib/utils";
+import { GitHubBackground } from "@/components/ui/github-background";
+import { Starfield } from "@/components/ui/starfield";
 
 const Hero = () => {
     const containerRef = useRef(null);
@@ -18,7 +20,11 @@ const Hero = () => {
     const translate = useTransform(scrollYProgress, [0, 1], [0, -100]);
 
     return (
-        <div ref={containerRef} className="hero-container relative">
+        <div ref={containerRef} className="hero-container relative overflow-hidden">
+            {/* Multi-layer Animated Background */}
+            <Starfield />
+            <GitHubBackground />
+            
             <div className="hero-content relative z-20">
                 <Header translate={translate} />
                 <Card rotate={rotate} scale={scale} />
