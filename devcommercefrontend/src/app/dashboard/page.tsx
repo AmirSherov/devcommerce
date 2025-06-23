@@ -5,6 +5,41 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import './style.scss';
 import SimpleLoader from '../../components/simple-loader';
+import { Sidebar, SidebarBody, SidebarLink } from '../../components/ui/sidebar';
+import { motion } from 'motion/react';
+import { cn } from '../../lib/utils';
+
+// Иконки для sidebar
+const DashboardIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
+  </svg>
+);
+
+const ProfileIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+    <circle cx="12" cy="7" r="4"></circle>
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m18-4a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
+  </svg>
+);
+
+const LogoutIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+    <polyline points="16,17 21,12 16,7"></polyline>
+    <line x1="21" y1="12" x2="9" y2="12"></line>
+  </svg>
+);
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading, logout, updateProfile, verifyEmail, resendVerificationCode } = useAuth();
@@ -18,6 +53,7 @@ export default function Dashboard() {
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerification, setShowVerification] = useState(false);
   const [message, setMessage] = useState('');
+  const [activeSection, setActiveSection] = useState('dashboard');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -95,23 +131,33 @@ export default function Dashboard() {
     return null;
   }
 
-  return (
-    <div className="dashboard">
-      <div className="dashboard-container">
-        <header className="dashboard-header">
-          <h1>Welcome to Your Dashboard</h1>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </header>
+  const links = [
+    {
+      label: "Dashboard",
+      href: "#",
+      icon: <DashboardIcon />,
+    },
+    {
+      label: "Profile",
+      href: "/u/me",
+      icon: <ProfileIcon />,
+    },
+    {
+      label: "Settings",
+      href: "#",
+      icon: <SettingsIcon />,
+    },
+    {
+      label: "Logout",
+      href: "#",
+      icon: <LogoutIcon />,
+    },
+  ];
 
-        {message && (
-          <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
-            {message}
-          </div>
-        )}
-
-        <div className="dashboard-content">
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'profile':
+        return (
           <div className="profile-section">
             <div className="profile-card">
               <h2>Profile Information</h2>
@@ -197,48 +243,126 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-
-          <div className="stats-section">
-            <div className="stats-card">
-              <h3>Account Statistics</h3>
-              <div className="stat-item">
-                <span className="stat-label">Account Status:</span>
-                <span className={`stat-value ${user.is_email_verified ? 'verified' : 'unverified'}`}>
-                  {user.is_email_verified ? 'Verified' : 'Unverified'}
-                </span>
+        );
+      case 'settings':
+        return (
+          <div className="settings-section">
+            <h2>Settings</h2>
+            <p>Settings content coming soon...</p>
+          </div>
+        );
+      default:
+        return (
+          <div className="dashboard-overview">
+            <h1>Добро пожаловать в ваш Dashboard!</h1>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <h3>Профиль</h3>
+                <p>Статус: {user.is_email_verified ? 'Верифицирован' : 'Не верифицирован'}</p>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Last Updated:</span>
-                <span className="stat-value">{new Date(user.updated_at).toLocaleDateString()}</span>
+              <div className="stat-card">
+                <h3>Участник с</h3>
+                <p>{new Date(user.created_at).toLocaleDateString()}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Email</h3>
+                <p>{user.email}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Имя пользователя</h3>
+                <p>{user.username}</p>
               </div>
             </div>
           </div>
-        </div>
+        );
+    }
+  };
 
-        {showVerification && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <h3>Verify Your Email</h3>
-              <p>Enter the verification code sent to your email:</p>
-              <form onSubmit={handleVerifyEmail}>
-                <input
-                  type="text"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="Enter 6-digit code"
-                  maxLength={6}
-                  required
-                />
-                <div className="modal-actions">
-                  <button type="submit" className="verify-btn">Verify</button>
-                  <button type="button" onClick={() => setShowVerification(false)} className="cancel-btn">
-                    Cancel
-                  </button>
+  return (
+    <div className={cn(
+      "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden",
+      "h-screen"
+    )}>
+      <Sidebar>
+        <SidebarBody className="justify-between gap-10">
+          <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="mt-8 flex flex-col gap-2">
+              {links.map((link, idx) => (
+                <div key={idx} onClick={() => {
+                  if (link.label === 'Logout') {
+                    handleLogout();
+                  } else if (link.label === 'Profile') {
+                    router.push('/u/me');
+                  } else {
+                    setActiveSection(link.label.toLowerCase());
+                  }
+                }}>
+                  <SidebarLink 
+                    link={{
+                      ...link,
+                      href: '#'
+                    }}
+                    className={cn(
+                      "cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg px-2 py-2",
+                      activeSection === link.label.toLowerCase() ? "bg-neutral-200 dark:bg-neutral-700" : ""
+                    )}
+                  />
                 </div>
-              </form>
+              ))}
             </div>
           </div>
-        )}
+          <div onClick={() => router.push('/u/me')} className="cursor-pointer">
+            <SidebarLink
+              link={{
+                label: user.username || user.email,
+                href: "#",
+                icon: (
+                  <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                    {(user.username || user.email).charAt(0).toUpperCase()}
+                  </div>
+                ),
+              }}
+            />
+          </div>
+        </SidebarBody>
+      </Sidebar>
+      
+      <div className="flex flex-1">
+        <div className="p-2 md:p-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full overflow-y-auto">
+          {message && (
+            <div className={`message ${message.includes('Error') ? 'error' : 'success'} mb-4 p-4 rounded-lg`}>
+              {message}
+            </div>
+          )}
+          
+          {renderContent()}
+
+          {showVerification && (
+            <div className="verification-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-neutral-800 p-6 rounded-lg max-w-md w-full mx-4">
+                <h3>Verify Your Email</h3>
+                <form onSubmit={handleVerifyEmail} className="mt-4">
+                  <div className="form-group">
+                    <label>Verification Code:</label>
+                    <input
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      required
+                      className="w-full p-2 border rounded mt-1"
+                    />
+                  </div>
+                  <div className="form-actions mt-4 flex gap-2">
+                    <button type="submit" className="verify-btn">Verify</button>
+                    <button type="button" onClick={() => setShowVerification(false)} className="cancel-btn">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
