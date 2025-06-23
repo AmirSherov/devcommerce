@@ -8,6 +8,7 @@ import { Cover } from "@/components/ui/cover";
 import { cn } from "@/lib/utils";
 import { GitHubBackground } from "@/components/ui/github-background";
 import { Starfield } from "@/components/ui/starfield";
+import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { useAuth } from "../../../contexts/AuthContext";
 
 const Hero = () => {
@@ -48,9 +49,15 @@ const Header = React.memo(({ translate }: { translate: MotionValue<number> }) =>
                         Добро пожаловать, {user.first_name || user.username}!
                     </p>
                     <div className="action-buttons">
-                        <Link href="/dashboard" className="dashboard-btn">
+                        <HoverBorderGradient
+                            as={Link}
+                            href="/dashboard"
+                            containerClassName="rounded-full"
+                            className="bg-black text-white px-6 py-3 font-medium"
+                            duration={1}
+                        >
                             Перейти в Dashboard →
-                        </Link>
+                        </HoverBorderGradient>
                     </div>
                 </div>
             );
@@ -62,9 +69,15 @@ const Header = React.memo(({ translate }: { translate: MotionValue<number> }) =>
                     Присоединяйтесь к сообществу разработчиков
                 </p>
                 <div className="action-buttons">
-                    <Link href="/auth" className="auth-btn primary">
+                    <HoverBorderGradient
+                        as={Link}
+                        href="/auth"
+                        containerClassName="rounded-full"
+                        className="bg-black text-white px-6 py-3 font-medium"
+                        duration={1}
+                    >
                         Начать →
-                    </Link>
+                    </HoverBorderGradient>
                 </div>
             </div>
         );

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import './style.scss';
+import SimpleLoader from '../../components/simple-loader';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading, logout, updateProfile, verifyEmail, resendVerificationCode } = useAuth();
@@ -85,13 +86,9 @@ export default function Dashboard() {
     setEditForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
+  // Показываем лоадер при загрузке
   if (isLoading) {
-    return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
+    return <SimpleLoader text="Загрузка..." />;
   }
 
   if (!isAuthenticated || !user) {

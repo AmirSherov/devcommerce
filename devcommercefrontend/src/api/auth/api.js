@@ -1,10 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+import { setAuthToken, getAuthToken, removeAuthToken, isAuthenticated, getAuthHeaders } from '../../lib/auth-utils';
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
@@ -33,7 +29,7 @@ export const authAPI = {
     
     // Store token if registration successful
     if (data.token) {
-      localStorage.setItem('token', data.token);
+      setAuthToken(data.token);
     }
     
     return data;
@@ -53,7 +49,7 @@ export const authAPI = {
     
     // Store token if login successful
     if (data.token) {
-      localStorage.setItem('token', data.token);
+      setAuthToken(data.token);
     }
     
     return data;
@@ -61,7 +57,7 @@ export const authAPI = {
 
   // Logout user
   logout: () => {
-    localStorage.removeItem('token');
+    removeAuthToken();
     // You can also call a logout endpoint if needed
     return Promise.resolve();
   },
@@ -161,12 +157,8 @@ export const authAPI = {
   },
 
   // Check if user is authenticated
-  isAuthenticated: () => {
-    return !!localStorage.getItem('token');
-  },
+  isAuthenticated,
 
   // Get stored token
-  getToken: () => {
-    return localStorage.getItem('token');
-  },
+  getToken: getAuthToken,
 }; 

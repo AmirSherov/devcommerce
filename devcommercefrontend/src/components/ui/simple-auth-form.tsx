@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react";
 import { AnimatedInput } from "./animated-input";
 import { AnimatedButton } from "./animated-button";
+import { HoverBorderGradient } from "./hover-border-gradient";
 import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/auth.scss";
+import SimpleLoader from "../simple-loader";
 
 export default function SimpleAuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -77,7 +79,6 @@ export default function SimpleAuthForm() {
         setMessage('Registration successful! Redirecting to dashboard...');
         setTimeout(() => router.push('/dashboard'), 1500);
       } else {
-        // Login
         await login({
           email: formData.email,
           password: formData.password,
@@ -137,6 +138,8 @@ export default function SimpleAuthForm() {
     setResetStep(1);
     setMessage('');
   }, []);
+
+
 
   if (showPasswordReset) {
     return (
@@ -199,14 +202,16 @@ export default function SimpleAuthForm() {
             )}
 
             <div className="form-controls">
-              <AnimatedButton 
-                type="submit" 
-                variant="primary" 
-                className="w-full mt-4"
+              <HoverBorderGradient
+                as="button"
+                type="submit"
+                containerClassName="rounded-full w-full"
+                className="bg-black text-white px-6 py-3 font-medium w-full"
+                duration={1}
                 disabled={isLoading}
               >
                 {isLoading ? 'Загрузка...' : (resetStep === 1 ? 'Отправить код' : 'Сбросить пароль')} →
-              </AnimatedButton>
+              </HoverBorderGradient>
 
               <div className="switch-container">
                 <button
@@ -318,14 +323,16 @@ export default function SimpleAuthForm() {
               </div>
             )}
 
-            <AnimatedButton 
-              type="submit" 
-              variant="primary" 
-              className="w-full mt-4"
+            <HoverBorderGradient
+              as="button"
+              type="submit"
+              containerClassName="rounded-full w-full"
+              className="bg-black text-white px-6 py-3 font-medium w-full"
+              duration={1}
               disabled={isLoading}
             >
               {isLoading ? 'Загрузка...' : (isSignUp ? "Создать аккаунт" : "Войти")} →
-            </AnimatedButton>
+            </HoverBorderGradient>
 
             <div className="switch-container">
               <span className="switch-text">
