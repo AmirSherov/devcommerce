@@ -42,7 +42,7 @@ const LogoutIcon = () => (
 );
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading, logout, updateProfile, verifyEmail, resendVerificationCode } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -50,8 +50,7 @@ export default function Dashboard() {
     last_name: '',
     username: '',
   });
-  const [verificationCode, setVerificationCode] = useState('');
-  const [showVerification, setShowVerification] = useState(false);
+
   const [message, setMessage] = useState('');
   const [activeSection, setActiveSection] = useState('dashboard');
 
@@ -93,30 +92,7 @@ export default function Dashboard() {
     }
   }, [editForm, updateProfile]);
 
-  const handleVerifyEmail = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      await verifyEmail(verificationCode);
-      setShowVerification(false);
-      setVerificationCode('');
-      setMessage('Email verified successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage(`Error: ${error}`);
-      setTimeout(() => setMessage(''), 3000);
-    }
-  }, [verificationCode, verifyEmail]);
 
-  const handleResendCode = useCallback(async () => {
-    try {
-      await resendVerificationCode();
-      setMessage('Verification code sent to your email!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage(`Error: ${error}`);
-      setTimeout(() => setMessage(''), 3000);
-    }
-  }, [resendVerificationCode]);
 
   const handleEditFormChange = useCallback((field: string, value: string) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
@@ -162,17 +138,7 @@ export default function Dashboard() {
             <div className="profile-card">
               <h2>Profile Information</h2>
               
-              {!user.is_email_verified && (
-                <div className="email-verification-notice">
-                  <p>⚠️ Your email is not verified</p>
-                  <button onClick={() => setShowVerification(true)} className="verify-btn">
-                    Verify Email
-                  </button>
-                  <button onClick={handleResendCode} className="resend-btn">
-                    Resend Code
-                  </button>
-                </div>
-              )}
+
 
               {!isEditing ? (
                 <div className="profile-info">
@@ -337,31 +303,7 @@ export default function Dashboard() {
           
           {renderContent()}
 
-          {showVerification && (
-            <div className="verification-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-neutral-800 p-6 rounded-lg max-w-md w-full mx-4">
-                <h3>Verify Your Email</h3>
-                <form onSubmit={handleVerifyEmail} className="mt-4">
-                  <div className="form-group">
-                    <label>Verification Code:</label>
-                    <input
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      required
-                      className="w-full p-2 border rounded mt-1"
-                    />
-                  </div>
-                  <div className="form-actions mt-4 flex gap-2">
-                    <button type="submit" className="verify-btn">Verify</button>
-                    <button type="button" onClick={() => setShowVerification(false)} className="cancel-btn">
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
     </div>
