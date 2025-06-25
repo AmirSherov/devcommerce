@@ -152,45 +152,106 @@ export default function PortfolioTab() {
 
   const PortfolioCard = ({ portfolio }: { portfolio: Portfolio }) => {
     const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [isPreviewLoading, setIsPreviewLoading] = useState(true);
+    const [previewError, setPreviewError] = useState(false);
 
     useEffect(() => {
+      // Слушатель для сообщений от iframe
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data === 'preview-loaded') {
+          setIsPreviewLoading(false);
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+
       // Создаем превью на основе HTML/CSS/JS контента
       const createPreview = () => {
-        const fullHTML = `<!DOCTYPE html>
+        setIsPreviewLoading(true);
+        setPreviewError(false);
+        
+        try {
+          // Проверяем, есть ли контент для превью
+          if (!portfolio.html_content && !portfolio.css_content && !portfolio.js_content) {
+            setPreviewError(true);
+            setIsPreviewLoading(false);
+            return;
+          }
+
+          const fullHTML = `<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${portfolio.title}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            overflow: hidden; /* Убираем скролл для превью */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
         }
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: auto;
+            background: #ffffff;
+        }
+        
+        /* Масштабирование для превью */
+        body {
+            transform: scale(0.7);
+            transform-origin: top left;
+            width: 142.86%; /* 100% / 0.7 для компенсации масштабирования */
+            height: 142.86%;
+        }
+        
+        /* Дополнительные стили для лучшего отображения */
         ${portfolio.css_content || ''}
     </style>
 </head>
 <body>
-    ${portfolio.html_content || ''}
+    ${portfolio.html_content || '<div style="padding: 20px; text-align: center; color: #666;"><h2>Нет HTML контента</h2><p>Добавьте HTML код для отображения превью</p></div>'}
     <script>
         // Изолируем JS код для превью
         (function() {
             'use strict';
             try {
+                // Отключаем потенциально проблематичные API для превью
+                if (typeof alert !== 'undefined') {
+                    window.alert = function() {};
+                }
+                if (typeof confirm !== 'undefined') {
+                    window.confirm = function() { return false; };
+                }
+                if (typeof prompt !== 'undefined') {
+                    window.prompt = function() { return null; };
+                }
+                
                 ${portfolio.js_content || ''}
             } catch(error) {
                 console.warn('Portfolio preview JS error:', error.message);
             }
         })();
+        
+        // Уведомляем о готовности превью
+        window.addEventListener('load', function() {
+            try {
+                parent.postMessage('preview-loaded', '*');
+            } catch(e) {}
+        });
     </script>
 </body>
 </html>`;
 
-        try {
           const blob = new Blob([fullHTML], { type: 'text/html; charset=utf-8' });
           const url = URL.createObjectURL(blob);
           setPreviewUrl(url);
+          
+          // Таймаут для обработки случаев, когда превью не загружается
+          setTimeout(() => {
+            setIsPreviewLoading(false);
+          }, 3000);
 
           // Очистка предыдущего URL
           return () => {
@@ -198,11 +259,17 @@ export default function PortfolioTab() {
           };
         } catch (error) {
           console.error('Preview creation error:', error);
+          setPreviewError(true);
+          setIsPreviewLoading(false);
         }
       };
 
       const cleanup = createPreview();
-      return cleanup;
+      
+      return () => {
+        window.removeEventListener('message', handleMessage);
+        if (cleanup) cleanup();
+      };
     }, [portfolio.html_content, portfolio.css_content, portfolio.js_content, portfolio.title]);
 
     const openFullPreview = () => {
@@ -214,40 +281,69 @@ export default function PortfolioTab() {
     return (
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-gray-700 transition-all duration-200 group">
         {/* Preview */}
-        <div className="h-48 bg-gray-800 relative overflow-hidden">
-          {previewUrl ? (
-            <iframe
-              src={previewUrl}
-              className="w-full h-full transform scale-75 origin-top-left pointer-events-none"
-              title={`Preview of ${portfolio.title}`}
-              sandbox="allow-scripts allow-same-origin"
-            />
+        <div className="h-64 bg-gray-800 relative overflow-hidden rounded-t-lg">
+          {previewUrl && !previewError ? (
+            <>
+              <iframe
+                src={previewUrl}
+                className="w-full h-full border-none bg-white pointer-events-none"
+                title={`Preview of ${portfolio.title}`}
+                sandbox="allow-scripts allow-same-origin allow-forms"
+                loading="lazy"
+                style={{
+                  minHeight: '256px',
+                  backgroundColor: '#ffffff'
+                }}
+                onLoad={() => setIsPreviewLoading(false)}
+                onError={() => {
+                  setPreviewError(true);
+                  setIsPreviewLoading(false);
+                }}
+              />
+              {isPreviewLoading && (
+                <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <div className="text-gray-400 text-sm">Загрузка превью...</div>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-800">
               <div className="text-center">
-                <div className="text-4xl mb-2">📝</div>
-                <div className="text-gray-400 text-sm">Загрузка превью...</div>
+                {previewError ? (
+                  <>
+                    <div className="text-4xl mb-2">⚠️</div>
+                    <div className="text-gray-400 text-sm mb-1">Ошибка загрузки превью</div>
+                    <div className="text-gray-500 text-xs">Проверьте HTML/CSS контент</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-4xl mb-2">📝</div>
+                    <div className="text-gray-400 text-sm">Создание превью...</div>
+                  </>
+                )}
               </div>
             </div>
           )}
-          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="flex space-x-2">
+          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+            <div className="flex space-x-3">
               <button
                 onClick={openFullPreview}
-                className="bg-white text-black px-3 py-2 rounded font-medium hover:bg-gray-100 transition-colors"
+                className="bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-lg"
               >
                 Открыть
               </button>
               <button
                 onClick={() => router.push(`/portfolio/edit/me?project=${portfolio.id}`)}
-                className="bg-gray-800 text-white px-3 py-2 rounded font-medium hover:bg-gray-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg"
               >
                 Редактировать
               </button>
             </div>
           </div>
         </div>
-      
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -273,7 +369,6 @@ export default function PortfolioTab() {
               </span>
             </div>
           </div>
-          
           <div className="flex items-center space-x-2">
             <button
               onClick={() => togglePublicStatus(portfolio)}
@@ -288,7 +383,6 @@ export default function PortfolioTab() {
                 )}
               </svg>
             </button>
-            
             <button
               onClick={() => openDeleteModal(portfolio)}
               className="text-gray-400 hover:text-red-400 transition-colors p-1"
@@ -301,13 +395,11 @@ export default function PortfolioTab() {
             </button>
           </div>
         </div>
-        
         <p className="text-gray-400 mb-4 text-sm overflow-hidden" style={{
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical'
         }}>{portfolio.description}</p>
-        
         <div className="flex flex-wrap gap-2 mb-4">
           {portfolio.tags.map((tag, index) => (
             <span 

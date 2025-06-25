@@ -25,7 +25,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, isLoadin
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Валидация
+
     if (!formData.title.trim()) {
       alert('Введите название проекта');
       return;
@@ -40,6 +40,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, isLoadin
       alert('Введите публичную ссылку на проект');
       return;
     }
+    
     
     if (!formData.project_public_link.startsWith('https://')) {
       alert('Публичная ссылка должна начинаться с https://');
