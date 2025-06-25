@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'portfolio.middleware.PortfolioSubdomainMiddleware',  # Обработка субдоменов портфолио
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -152,19 +153,16 @@ REST_FRAMEWORK = {
     ],
 }
 
-# JWT settings
 JWT_SECRET_KEY = SECRET_KEY
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_DELTA = timedelta(days=1)
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+CORS_ALLOW_ALL_ORIGINS = True  
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -173,16 +171,15 @@ EMAIL_HOST_USER = 'sher4mir@gmail.com'
 EMAIL_HOST_PASSWORD = 'aecu hjiu ifyq nawe'
 DEFAULT_FROM_EMAIL = 'DevCommerce <sher4mir@gmail.com>'
 
-# AWS S3 Settings
+
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
-AWS_DEFAULT_ACL = None  # Bucket doesn't support ACLs
+AWS_DEFAULT_ACL = None
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
 
-# Portfolio files storage
 PORTFOLIO_STORAGE_PATH = 'portfolios/'

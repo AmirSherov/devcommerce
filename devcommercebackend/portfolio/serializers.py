@@ -70,14 +70,9 @@ class PortfolioCreateSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        """Create portfolio with S3 files"""
-        from .s3_service import s3_service
-        
+        """Create portfolio"""
         user = self.context['request'].user
         portfolio = Portfolio.objects.create(author=user, **validated_data)
-        
-        # Create files in S3
-        s3_service.create_portfolio_files(portfolio)
         
         return portfolio
 
@@ -99,18 +94,12 @@ class PortfolioUpdateSerializer(serializers.ModelSerializer):
         return value.strip()
     
     def update(self, instance, validated_data):
-        """Update portfolio and sync to S3"""
-        from .s3_service import s3_service
+        """Update portfolio"""
         
         # Update instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        
-        # Sync to S3 and check if successful
-        s3_success = s3_service.sync_portfolio_to_s3(instance)
-        if not s3_success:
-            raise serializers.ValidationError("Ошибка сохранения файлов в S3")
         
         return instance
 
@@ -123,30 +112,13 @@ class PortfolioCodeUpdateSerializer(serializers.ModelSerializer):
         fields = ['html_content', 'css_content', 'js_content']
     
     def update(self, instance, validated_data):
-        """Update code content and sync to S3"""
-        from .s3_service import s3_service
+        """Update code content"""
         
-        # Track which files changed
-        changed_files = []
+        # Update instance with new data
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         
-        if 'html_content' in validated_data and instance.html_content != validated_data['html_content']:
-            instance.html_content = validated_data['html_content']
-            changed_files.append(('html', instance.html_file_key, instance.html_content))
-        
-        if 'css_content' in validated_data and instance.css_content != validated_data['css_content']:
-            instance.css_content = validated_data['css_content']
-            changed_files.append(('css', instance.css_file_key, instance.css_content))
-        
-        if 'js_content' in validated_data and instance.js_content != validated_data['js_content']:
-            instance.js_content = validated_data['js_content']
-            changed_files.append(('js', instance.js_file_key, instance.js_content))
-        
-        if changed_files:
-            instance.save()
-            
-            # Update only changed files in S3
-            for file_type, file_key, content in changed_files:
-                s3_service.update_portfolio_file(file_key, content, file_type)
+        instance.save()
         
         return instance
 

@@ -1,6 +1,6 @@
 import { setAuthToken, getAuthToken, removeAuthToken, isAuthenticated, getAuthHeaders } from '../../lib/auth-utils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {

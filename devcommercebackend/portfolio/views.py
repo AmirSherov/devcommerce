@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q, Count, Sum
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from .models import Portfolio, PortfolioLike, PortfolioView
 from .serializers import (
     PortfolioListSerializer, PortfolioDetailSerializer,
@@ -15,7 +16,6 @@ from .serializers import (
     PortfolioCodeUpdateSerializer, PortfolioStatsSerializer,
     UserPortfolioStatsSerializer
 )
-from .s3_service import s3_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,8 +26,6 @@ class PortfolioPagination(PageNumberPagination):
     page_size = 12
     page_size_query_param = 'page_size'
     max_page_size = 50
-
-
 def get_client_ip(request):
     """Get client IP address"""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -36,16 +34,12 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
-
-
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def portfolio_list(request):
     """Get list of public portfolios"""
     try:
         portfolios = Portfolio.objects.filter(is_public=True).select_related('author')
-        
-        # Search functionality
         search = request.GET.get('search', '')
         if search:
             portfolios = portfolios.filter(
@@ -54,20 +48,14 @@ def portfolio_list(request):
                 Q(author__username__icontains=search) |
                 Q(tags__icontains=search)
             )
-        
-        # Filter by tags
         tags = request.GET.get('tags', '')
         if tags:
             tag_list = [tag.strip() for tag in tags.split(',')]
             for tag in tag_list:
                 portfolios = portfolios.filter(tags__icontains=tag)
-        
-        # Ordering
         order_by = request.GET.get('order_by', '-updated_at')
         if order_by in ['-updated_at', '-created_at', '-views', '-likes', 'title']:
             portfolios = portfolios.order_by(order_by)
-        
-        # Pagination
         paginator = PortfolioPagination()
         page = paginator.paginate_queryset(portfolios, request)
         serializer = PortfolioListSerializer(page, many=True)
@@ -87,7 +75,6 @@ def my_portfolios(request):
     """Get current user's portfolios"""
     try:
         portfolios = Portfolio.objects.filter(author=request.user).order_by('-updated_at')
-        # Use DetailSerializer to include code content for editor
         serializer = PortfolioDetailSerializer(portfolios, many=True)
         
         return Response({
@@ -134,14 +121,10 @@ def portfolio_detail(request, portfolio_id):
     """Get portfolio details"""
     try:
         portfolio = get_object_or_404(Portfolio, id=portfolio_id)
-        
-        # Check permissions
         if not portfolio.is_public and portfolio.author != request.user:
             return Response({
                 'error': 'Portfolio not found or access denied'
             }, status=status.HTTP_404_NOT_FOUND)
-        
-        # Track view
         if request.user.is_authenticated:
             ip_address = get_client_ip(request)
             view, created = PortfolioView.objects.get_or_create(
@@ -224,10 +207,6 @@ def delete_portfolio(request, portfolio_id):
         portfolio = get_object_or_404(Portfolio, id=portfolio_id, author=request.user)
         
         with transaction.atomic():
-            # Delete files from S3
-            s3_service.delete_portfolio_folder(portfolio.s3_folder_path)
-            
-            # Delete portfolio
             portfolio.delete()
             
             return Response({
@@ -366,3 +345,226 @@ def portfolio_stats(request):
         return Response({
             'error': 'Failed to fetch portfolio statistics'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def public_portfolio_site(request, portfolio_id):
+    """Render public portfolio site by ID"""
+    try:
+        # Get portfolio - only if it's public
+        portfolio = get_object_or_404(Portfolio, id=portfolio_id, is_public=True)
+        
+        # Record view (anonymous or authenticated)
+        try:
+            user = request.user if request.user.is_authenticated else None
+            PortfolioView.objects.get_or_create(
+                portfolio=portfolio,
+                user=user,
+                defaults={'ip_address': request.META.get('REMOTE_ADDR', '')}
+            )
+        except Exception as e:
+            logger.warning(f"Failed to record view for portfolio {portfolio_id}: {e}")
+        
+        # Create full HTML page
+        full_html = f'''<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{portfolio.title} - {portfolio.author.username}</title>
+    <meta name="description" content="{portfolio.description}">
+    <meta name="author" content="{portfolio.author.username}">
+    <meta name="keywords" content="{', '.join(portfolio.tags)}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{request.build_absolute_uri()}">
+    <meta property="og:title" content="{portfolio.title}">
+    <meta property="og:description" content="{portfolio.description}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary">
+    <meta property="twitter:url" content="{request.build_absolute_uri()}">
+    <meta property="twitter:title" content="{portfolio.title}">
+    <meta property="twitter:description" content="{portfolio.description}">
+    
+    <style>
+        /* Reset and base styles */
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        html, body {{
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }}
+        
+        /* User styles */
+        {portfolio.css_content}
+    </style>
+</head>
+<body>
+    <!-- Portfolio content -->
+    {portfolio.html_content}
+    
+    <!-- Portfolio info (hidden by default, can be styled by user) -->
+    <div id="portfolio-info" style="display: none;">
+        <div class="portfolio-meta">
+            <h1>{portfolio.title}</h1>
+            <p>{portfolio.description}</p>
+            <p>Автор: {portfolio.author.username}</p>
+            <p>Теги: {', '.join(portfolio.tags)}</p>
+        </div>
+    </div>
+    
+    <script>
+        // User JavaScript
+        {portfolio.js_content}
+        
+        // Portfolio metadata (available globally)
+        window.portfolioMeta = {{
+            id: "{portfolio.id}",
+            title: "{portfolio.title}",
+            description: "{portfolio.description}",
+            author: "{portfolio.author.username}",
+            tags: {portfolio.tags},
+            views: {portfolio.views},
+            likes: {portfolio.likes}
+        }};
+    </script>
+</body>
+</html>'''
+        
+        return HttpResponse(full_html, content_type='text/html; charset=utf-8')
+        
+    except Portfolio.DoesNotExist:
+        # Return 404 page
+        return HttpResponse(
+            '''<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Портфолио не найдено</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .error { color: #e74c3c; }
+        .message { margin: 20px 0; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="error">
+        <h1>404 - Портфолио не найдено</h1>
+        <div class="message">
+            <p>Портфолио не существует или не является публичным</p>
+            <p><a href="/">← Вернуться на главную</a></p>
+        </div>
+    </div>
+</body>
+</html>''',
+            content_type='text/html; charset=utf-8',
+            status=404
+        )
+        
+    except Exception as e:
+        logger.error(f"Error serving portfolio {portfolio_id}: {e}")
+        return HttpResponse(
+            '''<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка сервера</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .error { color: #e74c3c; }
+        .message { margin: 20px 0; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="error">
+        <h1>500 - Ошибка сервера</h1>
+        <div class="message">
+            <p>Произошла ошибка при загрузке портфолио</p>
+            <p><a href="/">← Вернуться на главную</a></p>
+        </div>
+    </div>
+</body>
+</html>''',
+            content_type='text/html; charset=utf-8',
+            status=500
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def get_portfolio_by_slug(request, slug):
+    """Get portfolio by slug for subdomain rendering"""
+    try:
+        # Get portfolio by slug - only if it's public
+        portfolio = get_object_or_404(Portfolio, slug=slug, is_public=True)
+        
+        # Serialize portfolio data
+        serializer = PortfolioDetailSerializer(portfolio)
+        
+        return Response(serializer.data)
+        
+    except Portfolio.DoesNotExist:
+        return Response({
+            'error': 'Portfolio not found or not public'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        logger.error(f"Error in get_portfolio_by_slug: {e}")
+        return Response({
+            'error': 'Failed to fetch portfolio'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def record_portfolio_view_api(request, portfolio_id):
+    """Record portfolio view (for subdomain access)"""
+    try:
+        portfolio = get_object_or_404(Portfolio, id=portfolio_id, is_public=True)
+        
+        # Record view (anonymous or authenticated)
+        user = request.user if request.user.is_authenticated else None
+        ip_address = get_client_ip(request)
+        
+        PortfolioView.objects.get_or_create(
+            portfolio=portfolio,
+            user=user,
+            defaults={'ip_address': ip_address}
+        )
+        
+        return Response({'message': 'View recorded successfully'})
+        
+    except Portfolio.DoesNotExist:
+        return Response({
+            'error': 'Portfolio not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        logger.error(f"Error in record_portfolio_view_api: {e}")
+        return Response({
+            'error': 'Failed to record view'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def get_client_ip(request):
+    """Get client IP address"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

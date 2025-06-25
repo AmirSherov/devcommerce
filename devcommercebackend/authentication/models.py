@@ -10,6 +10,7 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
     is_email_verified = models.BooleanField(default=False)
+    is_premium = models.BooleanField(default=False, help_text="Премиум пользователь с расширенными возможностями")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

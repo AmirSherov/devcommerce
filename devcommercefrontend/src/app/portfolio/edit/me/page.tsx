@@ -320,13 +320,13 @@ document.addEventListener("DOMContentLoaded", function() {
         tags: currentPortfolio.tags
       });
       
-      setSuccess('Проект сохранен на S3!');
+      setSuccess('Проект сохранен!');
       setTimeout(() => {
         router.push('/u/me');
       }, 1500);
       
     } catch (error: any) {
-      setError(error.message || 'Ошибка сохранения на S3');
+      setError(error.message || 'Ошибка сохранения');
     } finally {
       setIsFullSaving(false);
     }

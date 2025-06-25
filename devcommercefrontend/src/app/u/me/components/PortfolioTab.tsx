@@ -43,6 +43,7 @@ export default function PortfolioTab() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [portfolioToDelete, setPortfolioToDelete] = useState<Portfolio | null>(null);
   const [isDeletingPortfolio, setIsDeletingPortfolio] = useState(false);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
   useEffect(() => {
     loadPortfolios();
@@ -148,6 +149,18 @@ export default function PortfolioTab() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess('Ссылка скопирована!');
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      setCopySuccess('Ошибка копирования');
+      setTimeout(() => setCopySuccess(null), 2000);
+    }
   };
 
   const PortfolioCard = ({ portfolio }: { portfolio: Portfolio }) => {
@@ -273,7 +286,11 @@ export default function PortfolioTab() {
     }, [portfolio.html_content, portfolio.css_content, portfolio.js_content, portfolio.title]);
 
     const openFullPreview = () => {
-      if (previewUrl) {
+      // Используем новый публичный URL если портфолио публично
+      if (portfolio.is_public && portfolio.public_url) {
+        window.open(portfolio.public_url, '_blank');
+      } else if (previewUrl) {
+        // Fallback на локальное превью для приватных портфолио
         window.open(previewUrl, '_blank');
       }
     };
@@ -350,7 +367,7 @@ export default function PortfolioTab() {
             <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors mb-1">
               {portfolio.title}
             </h3>
-            <div className="flex items-center space-x-4 text-sm text-gray-400">
+            <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
               <span className="flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -368,6 +385,29 @@ export default function PortfolioTab() {
                 {portfolio.is_public ? 'Публичный' : 'Приватный'}
               </span>
             </div>
+            
+            {portfolio.is_public && portfolio.public_url && (
+              <div className="mb-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400 mb-1">Публичная ссылка:</div>
+                    <div className="text-sm font-mono text-blue-400 break-all">
+                      {portfolio.public_url}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(portfolio.public_url)}
+                    className="ml-2 p-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    title="Копировать ссылку"
+                  >
+                    <svg className="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                      <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -437,15 +477,17 @@ export default function PortfolioTab() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Портфолио</h1>
           <p className="text-gray-400">Ваши проекты и работы</p>
-          <div className="flex items-center space-x-6 mt-3 text-sm">
-            <span className="text-gray-300">
-              <strong>{stats.portfolios_count}</strong> из 5 проектов
+          <div className="flex items-center gap-x-12 mt-3 text-sm">
+            <span className="text-gray-300 flex items-center gap-1">
+              <strong className="text-white">{stats.portfolios_count}</strong> из 5 проектов
             </span>
-            <span className="text-gray-300">
-              <strong>{stats.total_views}</strong> просмотров
+            <span className="text-gray-500">•</span>
+            <span className="text-gray-300 flex items-center gap-1">
+              <strong className="text-white">{stats.total_views}</strong> просмотров
             </span>
-            <span className="text-gray-300">
-              <strong>{stats.total_likes}</strong> лайков
+            <span className="text-gray-500">•</span>
+            <span className="text-gray-300 flex items-center gap-1">
+              <strong className="text-white">{stats.total_likes}</strong> лайков
             </span>
           </div>
         </div>
@@ -470,6 +512,13 @@ export default function PortfolioTab() {
       {error && (
         <div className="mb-6 bg-red-900/20 border border-red-700 rounded-lg p-4 text-red-400">
           {error}
+        </div>
+      )}
+
+      {/* Copy Success Toast */}
+      {copySuccess && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+          {copySuccess}
         </div>
       )}
 

@@ -22,10 +22,7 @@ class PortfolioAdmin(admin.ModelAdmin):
             'fields': ('html_content', 'css_content', 'js_content'),
             'classes': ('collapse',)
         }),
-        ('S3 файлы', {
-            'fields': ('html_file_key', 'css_file_key', 'js_file_key'),
-            'classes': ('collapse',)
-        }),
+
         ('Статистика', {
             'fields': ('views', 'likes', 'created_at', 'updated_at'),
             'classes': ('collapse',)
@@ -37,11 +34,13 @@ class PortfolioAdmin(admin.ModelAdmin):
     )
     
     def preview_link(self, obj):
-        if obj.public_url:
+        if obj.is_public and obj.public_url:
             return format_html(
                 '<a href="{}" target="_blank">Открыть превью</a>',
                 obj.public_url
             )
+        elif not obj.is_public:
+            return "Приватное портфолио"
         return "Нет ссылки"
     preview_link.short_description = "Превью"
     

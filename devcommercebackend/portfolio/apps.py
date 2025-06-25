@@ -6,4 +6,5 @@ class PortfolioConfig(AppConfig):
     name = 'portfolio'
 
     def ready(self):
-        import portfolio.signals
+        # Signals removed - no S3 cleanup needed
+        pass

@@ -18,12 +18,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from portfolio.views import public_portfolio_site
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/portfolio/', include('portfolio.urls')),
+    
+    # Public portfolio site
+    path('site/<uuid:portfolio_id>/', public_portfolio_site, name='public_portfolio_site'),
 ]
 
 # Serve media files during development
