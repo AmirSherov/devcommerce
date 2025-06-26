@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/auth/', include('authentication.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/portfolio/', include('portfolio.urls')),
+    path('api/ai/', include('ai_generator.urls')),
     
     # Public portfolio site
     path('site/<uuid:portfolio_id>/', public_portfolio_site, name='public_portfolio_site'),

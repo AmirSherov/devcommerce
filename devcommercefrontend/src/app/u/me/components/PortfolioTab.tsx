@@ -1,9 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../../contexts/AuthContext';
 import { portfolioAPI } from '../../../../api/portfolio/api';
+import { aiAPI, AI_ERROR_CODES, getErrorMessage } from '../../../../api/ai/api';
 import ConfirmModal from '../../../../components/ui/confirm-modal';
+import AIGeneratorModal from '../../../../components/ui/ai-generator-modal';
+import PremiumRequiredModal from '../../../../components/ui/premium-required-modal';
+import AIUnavailableModal from '../../../../components/ui/ai-unavailable-modal';
+import AISuccessModal from '../../../../components/ui/ai-success-modal';
 
 interface Portfolio {
   id: string;
@@ -29,6 +35,7 @@ interface Portfolio {
 
 export default function PortfolioTab() {
   const router = useRouter();
+  const { user } = useAuth();
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,10 +51,34 @@ export default function PortfolioTab() {
   const [portfolioToDelete, setPortfolioToDelete] = useState<Portfolio | null>(null);
   const [isDeletingPortfolio, setIsDeletingPortfolio] = useState(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [showAIGeneratorModal, setShowAIGeneratorModal] = useState(false);
+  const [showPremiumRequiredModal, setShowPremiumRequiredModal] = useState(false);
+  const [showAIUnavailableModal, setShowAIUnavailableModal] = useState(false);
+  const [showAISuccessModal, setShowAISuccessModal] = useState(false);
+  const [aiGeneratedPortfolio, setAIGeneratedPortfolio] = useState<any>(null);
+  const [aiGenerationTime, setAIGenerationTime] = useState<number | undefined>(undefined);
+  const [aiErrorMessage, setAIErrorMessage] = useState('');
+  const [showCreateDropdown, setShowCreateDropdown] = useState(false);
+  const [testPremiumOverride, setTestPremiumOverride] = useState(false);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadPortfolios();
     loadStats();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowCreateDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const loadPortfolios = async () => {
@@ -126,11 +157,50 @@ export default function PortfolioTab() {
 
       const response = await portfolioAPI.createPortfolio(newPortfolio);
       
-      router.push(`/portfolio/edit/me?project=${response.id}`);
+      router.push(`/portfolio/edit/me?project=${response.portfolio.id}`);
     } catch (error: any) {
       setError(error.message);
     }
   };
+
+  const handleCreateWithAI = () => {
+    setShowCreateDropdown(false);
+  
+    const isPremium = user?.is_premium || testPremiumOverride;
+    if (!isPremium) {
+      setShowPremiumRequiredModal(true);
+      return;
+    }
+    setShowAIGeneratorModal(true);
+  };
+
+  const handleAIGenerationSuccess = (portfolio: any, generationTime?: number) => {
+    setAIGeneratedPortfolio(portfolio);
+    setAIGenerationTime(generationTime);
+    setShowAIGeneratorModal(false);
+    setShowAISuccessModal(true);
+    loadPortfolios();
+    loadStats();
+  };
+
+  const handleAIGenerationError = (error: any) => {
+    setShowAIGeneratorModal(false);
+    
+    if (error.code === AI_ERROR_CODES.LIMIT_EXCEEDED || error.code === AI_ERROR_CODES.NOT_PREMIUM) {
+      setShowPremiumRequiredModal(true);
+    } else if (error.code === AI_ERROR_CODES.AI_ERROR || error.code === AI_ERROR_CODES.TIMEOUT) {
+      setAIErrorMessage(error.message);
+      setShowAIUnavailableModal(true);
+    } else {
+      setError(getErrorMessage(error.code) || error.message);
+    }
+  };
+
+  const handleCreateManually = () => {
+    setShowCreateDropdown(false);
+    createNewPortfolio();
+  };
+
 
   const getFilteredPortfolios = () => {
     if (selectedCategory === 'all') {
@@ -475,7 +545,17 @@ export default function PortfolioTab() {
       {/* Header with Stats */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Портфолио</h1>
+          <div className="flex items-center space-x-4 mb-2">
+            <h1 className="text-2xl font-bold text-white">Портфолио</h1>
+            {/* Временная кнопка для тестирования премиума */}
+            <button
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition-colors"
+              title="Тестовая кнопка для переключения премиума"
+            >
+              {(user?.is_premium || testPremiumOverride) ? '⭐ Premium ON' : '🔒 Premium OFF'}
+              {testPremiumOverride && ' (TEST)'}
+            </button>
+          </div>
           <p className="text-gray-400">Ваши проекты и работы</p>
           <div className="flex items-center gap-x-12 mt-3 text-sm">
             <span className="text-gray-300 flex items-center gap-1">
@@ -493,13 +573,74 @@ export default function PortfolioTab() {
         </div>
         
         <div className="flex space-x-3">
-          <button
-            onClick={() => createNewPortfolio()}
-            className="bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-            disabled={stats.remaining_slots === 0}
-          >
-            {stats.remaining_slots > 0 ? 'Создать портфолио' : 'Лимит достигнут'}
-          </button>
+          {/* Dropdown для создания портфолио */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowCreateDropdown(!showCreateDropdown)}
+              className="bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2"
+              disabled={stats.remaining_slots === 0}
+            >
+              <span>{stats.remaining_slots > 0 ? 'Создать портфолио' : 'Лимит достигнут'}</span>
+              {stats.remaining_slots > 0 && (
+                <svg 
+                  className={`w-4 h-4 transition-transform ${showCreateDropdown ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
+            
+            {showCreateDropdown && stats.remaining_slots > 0 && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-gray-900 border-2 border-white rounded-lg shadow-lg z-50">
+                <div className="p-2">
+                  {/* Ручное создание */}
+                  <button
+                    onClick={handleCreateManually}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-lg">📝</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Создать вручную</div>
+                      <div className="text-gray-400 text-sm">Пустой шаблон для редактирования</div>
+                    </div>
+                  </button>
+                  
+                  {/* AI генерация */}
+                  <button
+                    onClick={handleCreateWithAI}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors text-left relative"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-lg">🤖</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium flex items-center space-x-2">
+                        <span>AI Генератор</span>
+                        {!(user?.is_premium || testPremiumOverride) && <span className="text-yellow-400">🔐</span>}
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        {(user?.is_premium || testPremiumOverride)
+                          ? 'Создание сайта через искусственный интеллект'
+                          : 'Доступно только Premium пользователям'
+                        }
+                      </div>
+                    </div>
+                    {(user?.is_premium || testPremiumOverride) && (
+                      <div className="absolute top-2 right-2">
+                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <button
             onClick={() => router.push('/portfolio/edit/me')}
             className="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
@@ -609,6 +750,33 @@ export default function PortfolioTab() {
         cancelText="Отмена"
         type="danger"
         isLoading={isDeletingPortfolio}
+      />
+
+      {/* AI модальные окна */}
+      <AIGeneratorModal
+        isOpen={showAIGeneratorModal}
+        onClose={() => setShowAIGeneratorModal(false)}
+        onSuccess={handleAIGenerationSuccess}
+        isPremium={user?.is_premium || false}
+      />
+
+      <PremiumRequiredModal
+        isOpen={showPremiumRequiredModal}
+        onClose={() => setShowPremiumRequiredModal(false)}
+      />
+
+      <AIUnavailableModal
+        isOpen={showAIUnavailableModal}
+        onClose={() => setShowAIUnavailableModal(false)}
+        errorMessage={aiErrorMessage}
+        onRetry={() => setShowAIGeneratorModal(true)}
+      />
+
+      <AISuccessModal
+        isOpen={showAISuccessModal}
+        onClose={() => setShowAISuccessModal(false)}
+        portfolio={aiGeneratedPortfolio}
+        generationTime={aiGenerationTime}
       />
     </div>
   );

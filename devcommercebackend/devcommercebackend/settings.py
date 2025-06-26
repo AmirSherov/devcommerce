@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'authentication',
     'projects',
     'portfolio',
+    'ai_generator',
 ]
 
 MIDDLEWARE = [
@@ -171,7 +172,6 @@ EMAIL_HOST_USER = 'sher4mir@gmail.com'
 EMAIL_HOST_PASSWORD = 'aecu hjiu ifyq nawe'
 DEFAULT_FROM_EMAIL = 'DevCommerce <sher4mir@gmail.com>'
 
-
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
@@ -183,3 +183,13 @@ AWS_S3_OBJECT_PARAMETERS = {
 }
 
 PORTFOLIO_STORAGE_PATH = 'portfolios/'
+
+# DeepSeek AI Settings
+DEEPSEEK_API_KEY = config('DEEPSEEK_API_KEY', default='')  
+DEEPSEEK_API_URL = config('DEEPSEEK_API_URL', default='https://api.deepseek.com') 
+DEEPSEEK_MODEL = config('DEEPSEEK_MODEL', default='deepseek-chat')  
+
+# AI Generation Settings
+AI_GENERATION_TIMEOUT = 30  # seconds
+AI_DAILY_LIMIT_PREMIUM = 5
+AI_DAILY_LIMIT_FREE = 0
