@@ -232,4 +232,61 @@ class AIStyleStatsSerializer(serializers.Serializer):
     style = serializers.CharField()
     count = serializers.IntegerField()
     success_rate = serializers.FloatField()
-    average_response_time = serializers.FloatField() 
+    average_response_time = serializers.FloatField()
+
+
+class AIGenerationRequestSerializer(serializers.Serializer):
+    """Сериализатор для запроса AI генерации"""
+    
+    prompt = serializers.CharField(
+        max_length=2000,
+        help_text="Описание сайта для AI генерации"
+    )
+    title = serializers.CharField(
+        max_length=200,
+        help_text="Название сайта"
+    )
+    description = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        help_text="Дополнительное описание"
+    )
+    style = serializers.ChoiceField(
+        choices=[
+            ('modern', 'Современный'),
+            ('minimal', 'Минимализм'),
+            ('creative', 'Креативный'),
+            ('business', 'Бизнес'),
+            ('dark', 'Темная тема'),
+            ('colorful', 'Яркий'),
+            ('elegant', 'Элегантный'),
+            ('playful', 'Игривый'),
+            ('corporate', 'Корпоративный'),
+            ('artistic', 'Художественный'),
+        ],
+        default='modern',
+        help_text="Стиль дизайна"
+    )
+    tags = serializers.ListField(
+        child=serializers.CharField(max_length=50),
+        required=False,
+        allow_empty=True,
+        help_text="Теги для сайта"
+    )
+    
+    def validate_prompt(self, value):
+        """Валидация промпта"""
+        if len(value.strip()) < 10:
+            raise serializers.ValidationError(
+                "Промпт должен содержать минимум 10 символов"
+            )
+        return value.strip()
+    
+    def validate_title(self, value):
+        """Валидация названия"""
+        if len(value.strip()) < 3:
+            raise serializers.ValidationError(
+                "Название должно содержать минимум 3 символа"
+            )
+        return value.strip() 

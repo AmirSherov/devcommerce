@@ -1,17 +1,18 @@
-import json
 import time
-from typing import Dict, Any, Optional, Tuple
+import json
+import logging
+import re
+from typing import Dict, Any, Tuple
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from openai import OpenAI
 from portfolio.models import Portfolio
 from .models import AIGenerationRequest, AIGenerationStats, GlobalAIStats
-
-# Добавляем импорты для форматирования кода
 from bs4 import BeautifulSoup
 import cssbeautifier
 import jsbeautifier
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -25,8 +26,6 @@ class AIGenerationService:
         self.model = settings.DEEPSEEK_MODEL
         self.timeout = getattr(settings, 'AI_GENERATION_TIMEOUT', 30)
         self.max_retries = 1
-        
-        # Инициализируем OpenAI клиент для DeepSeek
         if self.api_key:
             try:
                 print(f"[DEBUG] Инициализация DeepSeek клиента")
@@ -50,8 +49,6 @@ class AIGenerationService:
         """Проверка лимитов пользователя"""
         if not user.is_premium:
             return False, "AI генерация доступна только Premium пользователям"
-        
-        # Проверяем дневной лимит
         today = timezone.now().date()
         stats, created = AIGenerationStats.objects.get_or_create(
             user=user, 
@@ -89,12 +86,25 @@ class AIGenerationService:
 
 ТРЕБОВАНИЯ:
 - Верни ТОЛЬКО валидный JSON без markdown блока
-- HTML: чистая семантичная разметка БЕЗ КАРТИНОК (img тегов)
+- HTML: чистая семантичная разметка с изображениями
 - CSS: адаптивный дизайн с медиа-запросами
 - JS: базовая интерактивность
-- Код должен быть компактным но функциональным
-- НЕ ИСПОЛЬЗУЙ КАРТИНКИ, вместо них используй CSS фигуры, градиенты, иконки символами
-- Всегда создавай сайт адаптивным и по больше его делай , он должен быть большим и красивым и должен соотвествовать требованиям пользоватея , ты должен всегда улучшать промпт пользоваетя , ты должен превозходить ожидания пользоваетя !
+- Код должен быть компактным но функциональный
+- Всегда создавай сайт адаптивным и большим, красивым
+- Должен соответствовать требованиям пользователя и превосходить ожидания
+
+ВАЖНО ДЛЯ ИЗОБРАЖЕНИЙ:
+- Используй img теги там, где нужны изображения
+- В src="" пиши специальный плейсхолдер в формате: "imageplace-KEYWORDS"
+- Где KEYWORDS - это ключевые слова для поиска изображения через запятую
+- Примеры:
+  * <img src="imageplace-food,burger,restaurant" alt="Бургер">
+  * <img src="imageplace-business,office,professional" alt="Офис">
+  * <img src="imageplace-technology,computer,modern" alt="Технологии">
+  * <img src="imageplace-people,team,meeting" alt="Команда">
+- НЕ используй background-image в CSS для основных изображений контента
+- Плейсхолдеры будут автоматически заменены на реальные изображения
+
 ОТВЕЧАЙ СТРОГО В ФОРМАТЕ:
 {{"html": "полный HTML код", "css": "полный CSS код", "js": "полный JS код"}}
 БЕЗ MARKDOWN БЛОКА!"""
@@ -155,8 +165,6 @@ class AIGenerationService:
                 
             if not api_response['choices']:
                 raise ValueError("Пустой массив choices в ответе API")
-                
-            # Извлекаем контент из ответа
             choice = api_response['choices'][0]
             if not choice or 'message' not in choice:
                 raise ValueError("Отсутствует message в choices[0]")
@@ -168,24 +176,17 @@ class AIGenerationService:
             content = message['content']
             if not content:
                 raise ValueError("Пустой контент в ответе API")
-            
-            # Пытаемся распарсить JSON
-            # Ищем JSON в ответе
             if '```json' in content:
-                # Обрабатываем markdown блок
                 start_idx = content.find('```json') + 7
                 end_idx = content.find('```', start_idx)
                 if end_idx == -1:
-                    # Блок не закрыт, берем до конца
                     json_content = content[start_idx:].strip()
-                    # Находим последнюю полную скобку
                     last_brace = json_content.rfind('}')
                     if last_brace != -1:
                         json_content = json_content[:last_brace + 1]
                 else:
                     json_content = content[start_idx:end_idx].strip()
             else:
-                # Ищем прямо JSON
                 start_idx = content.find('{')
                 end_idx = content.rfind('}') + 1
                 if start_idx == -1 or end_idx == 0:
@@ -199,14 +200,10 @@ class AIGenerationService:
             
             if not isinstance(code_data, dict):
                 raise ValueError(f"JSON должен быть объектом, получен {type(code_data)}")
-            
-            # Валидация обязательных полей
             required_fields = ['html', 'css', 'js']
             for field in required_fields:
                 if field not in code_data:
                     raise ValueError(f"Отсутствует обязательное поле: {field}")
-            
-            # Базовая валидация HTML
             html_content = code_data['html']
             if not html_content.strip().startswith('<!DOCTYPE html>'):
                 raise ValueError("HTML должен начинаться с <!DOCTYPE html>")
@@ -224,22 +221,62 @@ class AIGenerationService:
         except Exception as e:
             raise ValueError(f"Ошибка обработки ответа AI: {str(e)}")
     
+    def process_image_placeholders(self, code_data: Dict[str, str]) -> Dict[str, str]:
+        """Обработка плейсхолдеров изображений и замена их на реальные ссылки"""
+        import re
+        from .image_service import pexels_service
+        html_content = code_data.get('html', '')
+        placeholder_pattern = r'src="imageplace-([^"]+)"'
+        placeholders = re.findall(placeholder_pattern, html_content)
+        
+        logger.info(f"🖼️ [IMAGE PROCESSING] Найдено {len(placeholders)} плейсхолдеров изображений")
+        for placeholder in placeholders:
+            try:
+                keywords = [kw.strip() for kw in placeholder.split(',')]
+                search_query = ' '.join(keywords[:3])   
+                logger.info(f"🔍 [IMAGE SEARCH] Поиск изображения: {search_query}")
+                images = pexels_service.search_images(
+                    query=search_query,
+                    component_type='content',
+                    count=1
+                )
+                
+                if images:
+                    image_url = images[0]
+                    old_src = f'src="imageplace-{placeholder}"'
+                    new_src = f'src="{image_url}"'
+                    html_content = html_content.replace(old_src, new_src)
+                    logger.info(f"✅ [IMAGE REPLACE] Заменен плейсхолдер: {placeholder[:30]}... -> {image_url[:50]}...")
+                else:
+                    fallback_url = "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=500&h=300&fit=crop"
+                    old_src = f'src="imageplace-{placeholder}"'
+                    new_src = f'src="{fallback_url}"'
+                    html_content = html_content.replace(old_src, new_src)
+                    logger.warning(f"⚠️ [IMAGE FALLBACK] Использован fallback для: {placeholder}")
+                    
+            except Exception as e:
+                logger.error(f"❌ [IMAGE ERROR] Ошибка обработки плейсхолдера {placeholder}: {str(e)}")
+                continue
+        
+        return {
+            'html': html_content,
+            'css': code_data.get('css', ''),
+            'js': code_data.get('js', '')
+        }
+
     def create_portfolio_from_ai(self, code_data: Dict[str, str], request_data: Dict[str, Any]) -> Portfolio:
         """Создание портфолио из AI сгенерированного кода"""
-        
-        # Форматируем код для удобочитаемости
-        formatted_code = self.format_code_response(code_data)
-        
-        # Создаем портфолио с отформатированным кодом
+        processed_code = self.process_image_placeholders(code_data)
+        formatted_code = self.format_code_response(processed_code)
         portfolio = Portfolio.objects.create(
             author=request_data['user'],
             title=request_data['title'],
             description=request_data.get('description', ''),
-            html_content=formatted_code.get('html', code_data['html']),
-            css_content=formatted_code.get('css', code_data['css']),
-            js_content=formatted_code.get('js', code_data['js']),
+            html_content=formatted_code.get('html', processed_code['html']),
+            css_content=formatted_code.get('css', processed_code['css']),
+            js_content=formatted_code.get('js', processed_code['js']),
             tags=request_data.get('tags', ['ai-generated', request_data.get('style', 'modern')]),
-            is_public=True  # AI сгенерированные портфолио публичны по умолчанию
+            is_public=True  
         )
         return portfolio
     
@@ -290,8 +327,6 @@ class AIGenerationService:
             stats.total_successful += 1
         else:
             stats.total_failed += 1
-        
-        # Обновляем популярные стили
         if style:
             if style in stats.popular_styles:
                 stats.popular_styles[style] += 1
@@ -303,19 +338,15 @@ class AIGenerationService:
     def format_html(self, html_code: str) -> str:
         """Форматирует HTML код для удобочитаемости"""
         try:
-            # Создаем BeautifulSoup объект
             soup = BeautifulSoup(html_code, 'html.parser')
-            # Возвращаем красиво отформатированный HTML
             return soup.prettify()
         except Exception as e:
             logger.warning(f"HTML formatting failed: {e}")
-            # Если форматирование не удалось, возвращаем оригинал
             return html_code
 
     def format_css(self, css_code: str) -> str:
         """Форматирует CSS код для удобочитаемости"""
         try:
-            # Используем cssbeautifier для форматирования
             formatted = cssbeautifier.beautify(css_code, {
                 'indent_size': 2,
                 'indent_char': ' ',
@@ -343,7 +374,6 @@ class AIGenerationService:
     def format_js(self, js_code: str) -> str:
         """Форматирует JavaScript код для удобочитаемости"""
         try:
-            # Используем jsbeautifier для форматирования
             formatted = jsbeautifier.beautify(js_code, {
                 'indent_size': 2,
                 'indent_char': ' ',
@@ -371,16 +401,10 @@ class AIGenerationService:
     def format_code_response(self, code_data: Dict[str, str]) -> Dict[str, str]:
         """Форматирует весь код из ответа AI"""
         formatted_code = {}
-        
-        # Форматируем HTML
         if 'html' in code_data:
             formatted_code['html'] = self.format_html(code_data['html'])
-        
-        # Форматируем CSS
         if 'css' in code_data:
             formatted_code['css'] = self.format_css(code_data['css'])
-        
-        # Форматируем JS
         if 'js' in code_data:
             formatted_code['js'] = self.format_js(code_data['js'])
         
@@ -396,8 +420,6 @@ class AIGenerationService:
                 'error': f'Ошибка в request_data: {str(e)}',
                 'error_code': 'INVALID_REQUEST'
             }
-        
-        # Проверяем лимиты
         can_generate, error_message = self.check_user_limits(user)
         if not can_generate:
             return {
@@ -406,7 +428,6 @@ class AIGenerationService:
                 'error_code': 'LIMIT_EXCEEDED'
             }
         
-        # Создаем запись о запросе
         ai_request = AIGenerationRequest.objects.create(
             user=user,
             prompt=request_data['prompt'],
@@ -417,17 +438,12 @@ class AIGenerationService:
         )
         
         try:
-            # Отмечаем начало обработки
             ai_request.mark_started()
             start_time = time.time()
-            
-            # Создаем промпт
             full_prompt = self.build_ai_prompt(
                 request_data['prompt'], 
                 request_data.get('style', 'modern')
             )
-            
-            # Вызываем AI API
             try:
                 api_response = self.call_deepseek_api(full_prompt)
                 if not api_response:
@@ -436,32 +452,22 @@ class AIGenerationService:
                 ai_request.save()
             except Exception as e:
                 raise Exception(f"Ошибка API вызова: {str(e)}")
-            
-            # Парсим ответ
             try:
                 code_data = self.parse_ai_response(api_response)
                 if not code_data:
                     raise ValueError("parse_ai_response вернул None")
             except Exception as e:
                 raise Exception(f"Ошибка парсинга: {str(e)}")
-            
-            # Создаем портфолио
             try:
                 portfolio = self.create_portfolio_from_ai(code_data, request_data)
                 if not portfolio:
                     raise ValueError("create_portfolio_from_ai вернул None")
             except Exception as e:
                 raise Exception(f"Ошибка создания портфолио: {str(e)}")
-            
-            # Вычисляем время ответа
             response_time = time.time() - start_time
-            
-            # Отмечаем успешное завершение
             ai_request.mark_completed('success', portfolio)
             ai_request.response_time = response_time
             ai_request.save()
-            
-            # Обновляем статистику
             self.update_user_stats(user, 'success', response_time)
             self.update_global_stats('success', request_data.get('style', 'modern'), response_time)
             
@@ -474,9 +480,7 @@ class AIGenerationService:
             
         except Exception as e:
             error_msg = f"Ошибка генерации: {str(e)}"
-            print(f"[ERROR] {error_msg}")  # Временная отладка
-            
-            # Проверяем на таймаут (может быть в сообщении об ошибке)
+            print(f"[ERROR] {error_msg}")  
             if 'timeout' in str(e).lower() or 'time' in str(e).lower():
                 error_msg = "Превышено время ожидания ответа от AI сервера"
                 ai_request.mark_completed('timeout', error_message=error_msg)
@@ -514,7 +518,6 @@ class AIGenerationService:
             }
 
 
-# Вспомогательные функции
 def sync_generate_portfolio(request_data: Dict[str, Any]) -> Dict[str, Any]:
     """Синхронная генерация портфолио"""
     service = AIGenerationService()

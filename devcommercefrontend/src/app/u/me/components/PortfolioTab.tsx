@@ -610,7 +610,35 @@ export default function PortfolioTab() {
                     </div>
                   </button>
                   
-                  {/* AI генерация */}
+                  {/* AI Конструктор (новая страница) */}
+                  <button
+                    onClick={() => {
+                      setShowCreateDropdown(false);
+                      router.push('/ai-builder');
+                    }}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors text-left relative"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-lg">🚀</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium flex items-center space-x-2">
+                        <span>AI Конструктор</span>
+                        {!(user?.is_premium || testPremiumOverride) && <span className="text-yellow-400">🔐</span>}
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        {(user?.is_premium || testPremiumOverride)
+                          ? 'Полноценный конструктор с настройками'
+                          : 'Доступно только Premium пользователям'
+                        }
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
+                    </div>
+                  </button>
+
+                  {/* AI генерация (быстрая) */}
                   <button
                     onClick={handleCreateWithAI}
                     className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors text-left relative"
@@ -620,21 +648,16 @@ export default function PortfolioTab() {
                     </div>
                     <div className="flex-1">
                       <div className="text-white font-medium flex items-center space-x-2">
-                        <span>AI Генератор</span>
+                        <span>Быстрая AI генерация</span>
                         {!(user?.is_premium || testPremiumOverride) && <span className="text-yellow-400">🔐</span>}
                       </div>
                       <div className="text-gray-400 text-sm">
                         {(user?.is_premium || testPremiumOverride)
-                          ? 'Создание сайта через искусственный интеллект'
+                          ? 'Быстрое создание через модальное окно'
                           : 'Доступно только Premium пользователям'
                         }
                       </div>
                     </div>
-                    {(user?.is_premium || testPremiumOverride) && (
-                      <div className="absolute top-2 right-2">
-                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
-                      </div>
-                    )}
                   </button>
                 </div>
               </div>

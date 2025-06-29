@@ -1,11 +1,20 @@
-from rest_framework import status, permissions
+import time
+import logging
+from datetime import datetime, timedelta
+from typing import Dict, Any
+
+from django.db.models import Count, Q, Avg, Sum
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
+
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from django.utils import timezone
-from django.contrib.auth import get_user_model
-from django.db.models import Count, Avg, Sum, Q
-from datetime import datetime, timedelta
-import logging
+from rest_framework import status, permissions
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from .models import (
     AIGenerationRequest, AIGenerationStats, 
@@ -15,9 +24,11 @@ from .serializers import (
     AIGenerateRequestSerializer, AIGenerateResponseSerializer,
     AIGenerationRequestListSerializer, AIGenerationStatsSerializer,
     AIPromptTemplateSerializer, AIUserStatsSerializer,
-    AILimitsSerializer, AIStyleStatsSerializer
+    AILimitsSerializer, AIStyleStatsSerializer,
+    AIGenerationRequestSerializer
 )
 from .services import sync_generate_portfolio
+from .smart_generator import SmartAIGenerator
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -82,364 +93,447 @@ def ai_generate_portfolio(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_generation_limits(request):
-    """Получение информации о лимитах пользователя"""
-    try:
-        user = request.user
-        today = timezone.now().date()
-        stats, created = AIGenerationStats.objects.get_or_create(
-            user=user,
-            date=today,
-            defaults={
-                'requests_count': 0,
-                'successful_count': 0,
-                'failed_count': 0
+class SmartAIGenerationView(APIView):
+    """
+    🚀 РЕВОЛЮЦИОННЫЙ AI ГЕНЕРАТОР САЙТОВ МИРОВОГО УРОВНЯ!
+    
+    Теперь с 7-шаговым процессом премиум генерации и автоматическими изображениями!
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """Генерация сайта через ПРЕМИУМ AI процесс"""
+        
+        try:
+            serializer = AIGenerationRequestSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response({
+                    'success': False,
+                    'error': 'Некорректные данные',
+                    'details': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            request_data = {
+                'user': request.user,
+                'prompt': serializer.validated_data['prompt'],
+                'title': serializer.validated_data['title'],
+                'description': serializer.validated_data.get('description', ''),
+                'style': serializer.validated_data.get('style', 'modern'),
+                'tags': serializer.validated_data.get('tags', []),
+                'industry': serializer.validated_data.get('industry', 'general')
             }
-        )
+            
+            logger.info(f"🚀 [PREMIUM AI] Запрос РЕВОЛЮЦИОННОЙ генерации от {request.user.username}")
+            
+            # Создаем ПРЕМИУМ генератор и запускаем 7-шаговый процесс
+            generator = SmartAIGenerator()
+            result = generator.generate_website_premium(request_data)
+            
+            if result['success']:
+                logger.info(f"🎉 [PREMIUM AI] ✅ ШЕДЕВР создан для {request.user.username}!")
+                
+                # Формируем расширенный ответ с информацией о премиум процессе
+                response_data = {
+                    'success': True,
+                    'portfolio': {
+                        'id': str(result['portfolio'].id),
+                        'title': result['portfolio'].title,
+                        'slug': result['portfolio'].slug,
+                        'public_url': result['portfolio'].public_url,
+                        'is_public': result['portfolio'].is_public,
+                        'created_at': result['portfolio'].created_at.isoformat(),
+                        'tags': result['portfolio'].tags
+                    },
+                    'generation_info': {
+                        'request_id': result.get('request_id'),
+                        'response_time': round(result.get('response_time', 0), 2),
+                        'generation_steps': result.get('generation_steps', 7),
+                        'enhanced_features': result.get('enhanced_features', []),
+                        'process_type': 'premium_7_step'
+                    },
+                    'premium_features': {
+                        'business_analysis': True,
+                        'unique_design': True,
+                        'professional_copy': True,
+                        'auto_images': True,
+                        'modern_interactions': True
+                    }
+                }
+                
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            
+            else:
+                logger.error(f"💥 [PREMIUM AI] ❌ Ошибка генерации: {result.get('error', 'Unknown error')}")
+                
+                return Response({
+                    'success': False,
+                    'error': result.get('error', 'Произошла ошибка при создании шедевра'),
+                    'error_code': result.get('error_code', 'PREMIUM_ERROR')
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        # Подготавливаем данные о лимитах
-        daily_limit = 5 if user.is_premium else 0
-        used_today = stats.requests_count
-        remaining_today = max(0, daily_limit - used_today)
-        can_generate = user.is_premium and remaining_today > 0
-        
-        # Время сброса лимита (00:00 следующего дня)
-        tomorrow = today + timedelta(days=1)
-        next_reset = timezone.make_aware(datetime.combine(tomorrow, datetime.min.time()))
-        
-        # Сообщение о лимите
-        if not user.is_premium:
-            limit_message = "AI генерация доступна только Premium пользователям"
-        elif remaining_today == 0:
-            limit_message = f"Исчерпан дневной лимит ({daily_limit}/день). Сбросится завтра."
-        else:
-            limit_message = f"Осталось {remaining_today} из {daily_limit} генераций на сегодня"
-        
-        limits_data = {
-            'is_premium': user.is_premium,
-            'daily_limit': daily_limit,
-            'used_today': used_today,
-            'remaining_today': remaining_today,
-            'next_reset': next_reset,
-            'can_generate': can_generate,
-            'limit_message': limit_message
-        }
-        
-        serializer = AILimitsSerializer(limits_data)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        logger.error(f"Error in ai_generation_limits: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения лимитов'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_generation_history(request):
-    """История AI генераций пользователя"""
-    try:
-        user = request.user
-        
-        # Получаем историю запросов
-        requests = AIGenerationRequest.objects.filter(user=user).order_by('-created_at')
-        
-        # Пагинация
-        page_size = int(request.GET.get('page_size', 20))
-        page = int(request.GET.get('page', 1))
-        offset = (page - 1) * page_size
-        
-        total_count = requests.count()
-        requests_page = requests[offset:offset + page_size]
-        
-        serializer = AIGenerationRequestListSerializer(requests_page, many=True)
-        
-        return Response({
-            'results': serializer.data,
-            'count': total_count,
-            'page': page,
-            'page_size': page_size,
-            'total_pages': (total_count + page_size - 1) // page_size
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in ai_generation_history: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения истории'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_user_stats(request):
-    """Статистика AI генераций пользователя"""
-    try:
-        user = request.user
-        
-        # Общая статистика
-        total_requests = AIGenerationRequest.objects.filter(user=user).count()
-        total_successful = AIGenerationRequest.objects.filter(user=user, status='success').count()
-        total_failed = total_requests - total_successful
-        
-        # Процент успеха
-        success_rate = (total_successful / total_requests * 100) if total_requests > 0 else 0
-        
-        # Среднее время ответа
-        avg_response_time = AIGenerationRequest.objects.filter(
-            user=user, 
-            status='success', 
-            response_time__isnull=False
-        ).aggregate(avg_time=Avg('response_time'))['avg_time'] or 0
-        
-        # Количество созданных портфолио
-        total_portfolios_created = AIGenerationRequest.objects.filter(
-            user=user, 
-            portfolio_created__isnull=False
-        ).count()
-        
-        # Любимый стиль
-        favorite_style_data = AIGenerationRequest.objects.filter(user=user).values('style').annotate(
-            count=Count('style')
-        ).order_by('-count').first()
-        favorite_style = favorite_style_data['style'] if favorite_style_data else 'modern'
-        
-        # Статистика за сегодня
-        today = timezone.now().date()
-        today_stats = AIGenerationStats.objects.filter(user=user, date=today).first()
-        today_requests = today_stats.requests_count if today_stats else 0
-        remaining_today = max(0, 5 - today_requests) if user.is_premium else 0
-        
-        # Наиболее используемые промпты (последние 10)
-        recent_prompts = AIGenerationRequest.objects.filter(
-            user=user,
-            status='success'
-        ).order_by('-created_at')[:10].values_list('prompt', flat=True)
-        
-        stats_data = {
-            'total_requests': total_requests,
-            'total_successful': total_successful,
-            'total_failed': total_failed,
-            'success_rate': round(success_rate, 1),
-            'average_response_time': round(avg_response_time, 2),
-            'total_portfolios_created': total_portfolios_created,
-            'favorite_style': favorite_style,
-            'today_requests': today_requests,
-            'remaining_today': remaining_today,
-            'most_used_prompts': list(recent_prompts)
-        }
-        
-        serializer = AIUserStatsSerializer(stats_data)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        logger.error(f"Error in ai_user_stats: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения статистики'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_daily_stats(request):
-    """Дневная статистика AI генераций пользователя"""
-    try:
-        user = request.user
-        
-        # Получаем статистику за последние 30 дней
-        end_date = timezone.now().date()
-        start_date = end_date - timedelta(days=30)
-        
-        daily_stats = AIGenerationStats.objects.filter(
-            user=user,
-            date__gte=start_date,
-            date__lte=end_date
-        ).order_by('-date')
-        
-        serializer = AIGenerationStatsSerializer(daily_stats, many=True)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        logger.error(f"Error in ai_daily_stats: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения дневной статистики'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_style_stats(request):
-    """Статистика по стилям для пользователя"""
-    try:
-        user = request.user
-        
-        # Статистика по стилям
-        style_stats = AIGenerationRequest.objects.filter(user=user).values('style').annotate(
-            count=Count('id'),
-            successful=Count('id', filter=Q(status='success')),
-            avg_response_time=Avg('response_time', filter=Q(status='success'))
-        ).order_by('-count')
-        
-        results = []
-        for stat in style_stats:
-            success_rate = (stat['successful'] / stat['count'] * 100) if stat['count'] > 0 else 0
-            results.append({
-                'style': stat['style'],
-                'count': stat['count'],
-                'success_rate': round(success_rate, 1),
-                'average_response_time': round(stat['avg_response_time'] or 0, 2)
-            })
-        
-        serializer = AIStyleStatsSerializer(results, many=True)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        logger.error(f"Error in ai_style_stats: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения статистики по стилям'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_prompt_templates(request):
-    """Получение шаблонов промптов"""
-    try:
-        user = request.user
-        
-        # Получаем публичные шаблоны и шаблоны пользователя
-        templates = AIPromptTemplate.objects.filter(
-            Q(is_public=True) | Q(user=user)
-        ).order_by('-is_featured', '-usage_count', '-created_at')
-        
-        # Фильтрация по категории
-        category = request.GET.get('category')
-        if category:
-            templates = templates.filter(category=category)
-        
-        # Фильтрация по стилю
-        style = request.GET.get('style')
-        if style:
-            templates = templates.filter(style=style)
-        
-        serializer = AIPromptTemplateSerializer(templates, many=True)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        logger.error(f"Error in ai_prompt_templates: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения шаблонов'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_save_prompt_template(request):
-    """Сохранение промпта как шаблона"""
-    try:
-        user = request.user
-        
-        # Проверяем лимит шаблонов (максимум 20 на пользователя)
-        user_templates_count = AIPromptTemplate.objects.filter(user=user).count()
-        if user_templates_count >= 20:
-            return Response({
-                'error': 'Превышен лимит шаблонов (максимум 20)'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer = AIPromptTemplateSerializer(data=request.data)
-        if serializer.is_valid():
-            template = serializer.save(user=user)
+        except Exception as e:
+            logger.error(f"💥 [PREMIUM AI] ❌ Критическая ошибка: {str(e)}")
             
             return Response({
-                'message': 'Шаблон сохранен',
-                'template': AIPromptTemplateSerializer(template).data
-            }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-    except Exception as e:
-        logger.error(f"Error in ai_save_prompt_template: {str(e)}")
-        return Response({
-            'error': 'Ошибка сохранения шаблона'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                'success': False,
+                'error': 'Ошибка премиум генерации. Наши инженеры уже работают над исправлением!',
+                'error_code': 'PREMIUM_CRITICAL_ERROR'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['DELETE'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_delete_prompt_template(request, template_id):
-    """Удаление шаблона промпта"""
-    try:
-        user = request.user
+class PremiumAIGenerationWithProgressView(APIView):
+    """
+    🎯 ПРЕМИУМ ГЕНЕРАЦИЯ С ПОКАЗОМ ПРОГРЕССА
+    
+    WebSocket-like API для отслеживания прогресса 7-шагового процесса
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """Запуск премиум генерации с детальным прогрессом"""
         
-        template = AIPromptTemplate.objects.filter(
-            id=template_id,
-            user=user
-        ).first()
-        
-        if not template:
-            return Response({
-                'error': 'Шаблон не найден'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        template.delete()
-        
-        return Response({
-            'message': 'Шаблон удален'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in ai_delete_prompt_template: {str(e)}")
-        return Response({
-            'error': 'Ошибка удаления шаблона'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAdminUser])
-def ai_global_stats(request):
-    """Глобальная статистика AI (только для админов)"""
-    try:
-        # Получаем статистику за последние 30 дней
-        end_date = timezone.now().date()
-        start_date = end_date - timedelta(days=30)
-        
-        global_stats = GlobalAIStats.objects.filter(
-            date__gte=start_date,
-            date__lte=end_date
-        ).order_by('-date')
-        
-        # Агрегированная статистика
-        total_requests = sum(stat.total_requests for stat in global_stats)
-        total_successful = sum(stat.total_successful for stat in global_stats)
-        total_failed = sum(stat.total_failed for stat in global_stats)
-        
-        success_rate = (total_successful / total_requests * 100) if total_requests > 0 else 0
-        
-        return Response({
-            'daily_stats': [
-                {
-                    'date': stat.date,
-                    'total_requests': stat.total_requests,
-                    'total_successful': stat.total_successful,
-                    'total_failed': stat.total_failed,
-                    'active_users': stat.active_users,
-                    'average_response_time': stat.average_response_time,
-                    'popular_styles': stat.popular_styles
-                }
-                for stat in global_stats
-            ],
-            'aggregated': {
-                'total_requests': total_requests,
-                'total_successful': total_successful,
-                'total_failed': total_failed,
-                'success_rate': round(success_rate, 1)
+        try:
+            # Валидация данных
+            serializer = AIGenerationRequestSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response({
+                    'success': False,
+                    'error': 'Некорректные данные',
+                    'details': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Создаем кастомный генератор с callback'ами прогресса
+            generator = ProgressTrackingGenerator(user=request.user)
+            
+            request_data = {
+                'user': request.user,
+                'prompt': serializer.validated_data['prompt'],
+                'title': serializer.validated_data['title'],
+                'description': serializer.validated_data.get('description', ''),
+                'style': serializer.validated_data.get('style', 'modern'),
+                'tags': serializer.validated_data.get('tags', []),
+                'industry': serializer.validated_data.get('industry', 'general')
             }
-        })
+            
+            # Запускаем генерацию с трекингом прогресса
+            result = generator.generate_with_progress(request_data)
+            
+            return Response(result)
+            
+        except Exception as e:
+            logger.error(f"💥 [PROGRESS AI] ❌ Ошибка: {str(e)}")
+            return Response({
+                'success': False,
+                'error': 'Ошибка генерации с прогрессом'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ProgressTrackingGenerator:
+    """Генератор с отслеживанием прогресса для frontend'а"""
+    
+    def __init__(self, user):
+        self.user = user
+        self.generator = SmartAIGenerator()
+        self.progress_steps = [
+            {"step": 1, "name": "🔍 Анализируем ваш бизнес", "description": "Изучаем индустрию и конкурентов"},
+            {"step": 2, "name": "🏗️ Проектируем архитектуру", "description": "Создаём структуру и навигацию"},
+            {"step": 3, "name": "🎨 Разрабатываем дизайн", "description": "Создаём уникальную концепцию"},
+            {"step": 4, "name": "✍️ Пишем контент", "description": "Создаём продающие тексты"},
+            {"step": 5, "name": "🖼️ Подбираем изображения", "description": "Интегрируем качественные фото"},
+            {"step": 6, "name": "⚡ Добавляем интерактив", "description": "Создаём анимации и эффекты"},
+            {"step": 7, "name": "🎯 Собираем шедевр", "description": "Финальная оптимизация и сборка"}
+        ]
+    
+    def generate_with_progress(self, request_data):
+        """Генерация с детальным прогрессом"""
         
-    except Exception as e:
-        logger.error(f"Error in ai_global_stats: {str(e)}")
-        return Response({
-            'error': 'Ошибка получения глобальной статистики'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        try:
+            start_time = time.time()
+            
+            # Имитируем прогресс для демонстрации
+            progress_data = {
+                'success': True,
+                'status': 'completed',
+                'total_steps': 7,
+                'completed_steps': 7,
+                'current_step': {
+                    'step': 7,
+                    'name': '🎉 Готово!',
+                    'description': 'Ваш сайт создан'
+                },
+                'steps_detail': self.progress_steps,
+                'estimated_time': '45-60 секунд',
+                'actual_time': 0
+            }
+            
+            # Запускаем реальную генерацию
+            result = self.generator.generate_website_premium(request_data)
+            
+            actual_time = round(time.time() - start_time, 2)
+            progress_data['actual_time'] = actual_time
+            
+            if result['success']:
+                progress_data.update({
+                    'portfolio': {
+                        'id': str(result['portfolio'].id),
+                        'title': result['portfolio'].title,
+                        'slug': result['portfolio'].slug,
+                        'public_url': result['portfolio'].public_url,
+                        'is_public': result['portfolio'].is_public,
+                        'created_at': result['portfolio'].created_at.isoformat(),
+                        'tags': result['portfolio'].tags
+                    },
+                    'generation_summary': {
+                        'enhanced_features': result.get('enhanced_features', []),
+                        'business_insights': f"Проанализирован бизнес типа '{request_data.get('industry', 'general')}'",
+                        'design_uniqueness': "Создана уникальная дизайн-концепция",
+                        'images_integrated': "Автоматически подобраны качественные изображения",
+                        'code_quality': "Современный адаптивный код"
+                    }
+                })
+            else:
+                progress_data.update({
+                    'success': False,
+                    'error': result.get('error', 'Ошибка генерации'),
+                    'status': 'failed'
+                })
+            
+            return progress_data
+            
+        except Exception as e:
+            logger.error(f"💥 [PROGRESS] Ошибка: {str(e)}")
+            return {
+                'success': False,
+                'error': f'Ошибка в процессе генерации: {str(e)}',
+                'status': 'failed'
+            }
+
+
+class GetUserLimitsView(APIView):
+    """API для получения лимитов пользователя"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Получение информации о лимитах пользователя"""
+        try:
+            user = request.user
+            today = timezone.now().date()
+            
+            # Получаем статистику за сегодня
+            stats, created = AIGenerationStats.objects.get_or_create(
+                user=user,
+                date=today,
+                defaults={
+                    'requests_count': 0,
+                    'successful_count': 0,
+                    'failed_count': 0
+                }
+            )
+            
+            # Настраиваем лимиты
+            daily_limit = 5 if user.is_premium else 0
+            used_today = stats.requests_count
+            remaining_today = max(0, daily_limit - used_today)
+            can_generate = user.is_premium and remaining_today > 0
+            
+            # Время сброса лимита
+            tomorrow = today + timedelta(days=1)
+            next_reset = timezone.make_aware(datetime.combine(tomorrow, datetime.min.time()))
+            
+            # Формируем сообщение
+            if not user.is_premium:
+                limit_message = "AI генерация доступна только Premium пользователям"
+            elif remaining_today == 0:
+                limit_message = f"Исчерпан дневной лимит ({daily_limit}/день). Сбросится завтра."
+            else:
+                limit_message = f"Осталось {remaining_today} из {daily_limit} генераций на сегодня"
+            
+            return Response({
+                'success': True,
+                'data': {
+                    'is_premium': user.is_premium,
+                    'daily_limit': daily_limit,
+                    'used_today': used_today,
+                    'remaining_today': remaining_today,
+                    'next_reset': next_reset.isoformat(),
+                    'can_generate': can_generate,
+                    'limit_message': limit_message
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"[LIMITS] Ошибка получения лимитов: {str(e)}")
+            return Response({
+                'success': False,
+                'error': 'Ошибка получения лимитов пользователя'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AIStatsView(APIView):
+    """API для получения статистики AI"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Получение общей статистики AI"""
+        try:
+            user = request.user
+            
+            # Общие метрики пользователя
+            total_requests = AIGenerationRequest.objects.filter(user=user).count()
+            total_successful = AIGenerationRequest.objects.filter(user=user, status='success').count()
+            total_failed = total_requests - total_successful
+            
+            success_rate = (total_successful / total_requests * 100) if total_requests > 0 else 0
+            
+            # Среднее время ответа
+            avg_response_time = AIGenerationRequest.objects.filter(
+                user=user, 
+                status='success', 
+                response_time__isnull=False
+            ).aggregate(avg_time=Avg('response_time'))['avg_time'] or 0
+            
+            # Любимый стиль
+            favorite_style = AIGenerationRequest.objects.filter(user=user).values('style').annotate(
+                count=Count('style')
+            ).order_by('-count').first()
+            
+            return Response({
+                'success': True,
+                'data': {
+                    'total_requests': total_requests,
+                    'total_successful': total_successful,
+                    'total_failed': total_failed,
+                    'success_rate': round(success_rate, 1),
+                    'average_response_time': round(avg_response_time, 2),
+                    'favorite_style': favorite_style['style'] if favorite_style else 'modern'
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"[STATS] Ошибка получения статистики: {str(e)}")
+            return Response({
+                'success': False,
+                'error': 'Ошибка получения статистики'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AIGenerationHistoryView(APIView):
+    """API для получения истории AI генераций пользователя"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Получение истории генераций"""
+        
+        try:
+            # Получаем последние 20 запросов пользователя
+            requests = AIGenerationRequest.objects.filter(
+                user=request.user
+            ).select_related('portfolio_created').order_by('-created_at')[:20]
+            
+            history_data = []
+            for req in requests:
+                request_data = {
+                    'id': req.id,
+                    'title': req.title,
+                    'prompt': req.prompt[:100] + '...' if len(req.prompt) > 100 else req.prompt,
+                    'style': req.style,
+                    'status': req.status,
+                    'response_time': req.response_time,
+                    'created_at': req.created_at.isoformat(),
+                    'portfolio': None
+                }
+                
+                if req.portfolio_created:
+                    request_data['portfolio'] = {
+                        'id': str(req.portfolio_created.id),
+                        'slug': req.portfolio_created.slug,
+                        'public_url': req.portfolio_created.public_url,
+                        'is_public': req.portfolio_created.is_public
+                    }
+                
+                history_data.append(request_data)
+            
+            return Response({
+                'history': history_data,
+                'total_requests': AIGenerationRequest.objects.filter(user=request.user).count()
+            })
+        
+        except Exception as e:
+            logger.error(f"[HISTORY] Ошибка получения истории: {str(e)}")
+            
+            return Response({
+                'error': 'Ошибка получения истории'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PromptTemplatesView(APIView):
+    """API для работы с шаблонами промптов"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Получение шаблонов промптов"""
+        try:
+            user = request.user
+            
+            # Получаем публичные шаблоны и шаблоны пользователя
+            templates = AIPromptTemplate.objects.filter(
+                Q(is_public=True) | Q(user=user)
+            ).order_by('-is_featured', '-usage_count', '-created_at')
+            
+            # Фильтры
+            category = request.GET.get('category')
+            if category:
+                templates = templates.filter(category=category)
+            
+            style = request.GET.get('style')
+            if style:
+                templates = templates.filter(style=style)
+            
+            serializer = AIPromptTemplateSerializer(templates, many=True)
+            return Response({
+                'success': True,
+                'data': serializer.data
+            })
+            
+        except Exception as e:
+            logger.error(f"[TEMPLATES] Ошибка получения шаблонов: {str(e)}")
+            return Response({
+                'success': False,
+                'error': 'Ошибка получения шаблонов промптов'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def post(self, request):
+        """Создание нового шаблона промпта"""
+        try:
+            user = request.user
+            
+            # Проверяем лимит шаблонов
+            user_templates_count = AIPromptTemplate.objects.filter(user=user).count()
+            if user_templates_count >= 20:
+                return Response({
+                    'success': False,
+                    'error': 'Превышен лимит шаблонов (максимум 20)'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            serializer = AIPromptTemplateSerializer(data=request.data)
+            if serializer.is_valid():
+                template = serializer.save(user=user)
+                
+                return Response({
+                    'success': True,
+                    'data': AIPromptTemplateSerializer(template).data,
+                    'message': 'Шаблон успешно создан'
+                }, status=status.HTTP_201_CREATED)
+            
+            return Response({
+                'success': False,
+                'error': 'Некорректные данные',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            logger.error(f"[TEMPLATES] Ошибка создания шаблона: {str(e)}")
+            return Response({
+                'success': False,
+                'error': 'Ошибка создания шаблона'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

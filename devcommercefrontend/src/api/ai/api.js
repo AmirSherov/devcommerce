@@ -183,6 +183,204 @@ export const aiAPI = {
       throw error;
     }
   },
+
+  /**
+   * 🚀 ПРЕМИУМ генерация сайта через революционный 7-шаговый AI
+   */
+  async premiumGenerate(data) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/premium-generate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new AIAPIError(
+          result.error || 'Ошибка премиум генерации',
+          result.error_code || 'PREMIUM_ERROR',
+          response.status
+        );
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof AIAPIError) {
+        throw error;
+      }
+      throw new AIAPIError('Ошибка сети при премиум генерации', 'NETWORK_ERROR', 0);
+    }
+  },
+
+  /**
+   * Умная генерация сайта через новый AI (улучшенный)
+   */
+  async smartGenerate(data) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/smart-generate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new AIAPIError(
+          result.error || 'Ошибка генерации',
+          result.error_code || 'UNKNOWN',
+          response.status
+        );
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof AIAPIError) {
+        throw error;
+      }
+      throw new AIAPIError('Ошибка сети', 'NETWORK_ERROR', 0);
+    }
+  },
+
+  /**
+   * Получение метрик AI генерации
+   */
+  async getMetrics() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/metrics/`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка получения метрик');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching AI metrics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получение информации о кэше AI
+   */
+  async getCacheInfo() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/cache/`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка получения информации о кэше');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching cache info:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Очистка кэша AI (только для админов)
+   */
+  async clearCache() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/cache/clear/`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Ошибка очистки кэша');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получение детальной статистики пользователя
+   */
+  async getUserDetailedStats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/stats/user/`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка получения детальной статистики');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching detailed user stats:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получение глобальной статистики (только для админов)
+   */
+  async getGlobalStats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/stats/global/`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка получения глобальной статистики');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching global stats:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получение истории AI генераций с расширенными фильтрами
+   */
+  async getGenerationHistoryAdvanced(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.page) params.append('page', filters.page);
+      if (filters.page_size) params.append('page_size', filters.page_size);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.style) params.append('style', filters.style);
+
+      const response = await fetch(
+        `${API_BASE_URL}/ai/history/?${params.toString()}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Ошибка получения истории');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching advanced AI history:', error);
+      throw error;
+    }
+  },
 };
 
 // Константы для кодов ошибок

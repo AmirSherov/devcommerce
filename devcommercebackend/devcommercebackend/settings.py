@@ -185,11 +185,40 @@ AWS_S3_OBJECT_PARAMETERS = {
 PORTFOLIO_STORAGE_PATH = 'portfolios/'
 
 # DeepSeek AI Settings
-DEEPSEEK_API_KEY = config('DEEPSEEK_API_KEY', default='')  
+DEEPSEEK_API_KEY = config('DEEPSEEK_API_KEY', default='sk-b704203b2e8c45f9b6c4d8f9e0a03a1c6b2e4d8f1c3a6b9e0d2c5f8a1b4e7d0c1822')  # Временно захардкодили
 DEEPSEEK_API_URL = config('DEEPSEEK_API_URL', default='https://api.deepseek.com') 
 DEEPSEEK_MODEL = config('DEEPSEEK_MODEL', default='deepseek-chat')  
 
 # AI Generation Settings
-AI_GENERATION_TIMEOUT = 30  # seconds
-AI_DAILY_LIMIT_PREMIUM = 5
-AI_DAILY_LIMIT_FREE = 0
+AI_GENERATION_TIMEOUT = 60  # секунд
+AI_CACHE_TIMEOUT = 86400 * 7  # 7 дней
+
+# Кэширование
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'devcommerce',
+        'TIMEOUT': 86400,  # 24 часа по умолчанию
+    }
+}
+
+# Если нет Redis, используем локальный кэш
+if not os.environ.get('REDIS_URL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': 86400,
+            'OPTIONS': {
+                'MAX_ENTRIES': 10000,
+            }
+        }
+    }
+
+# Pexels API settings
+PEXELS_ACCESS_KEY = '6r96KapNJVJkZ9Y22Bfa6dSiYYqPuvd0bbYQIhzTpmjyNhRtOGGcB6nj'
+PEXELS_ENABLED = True

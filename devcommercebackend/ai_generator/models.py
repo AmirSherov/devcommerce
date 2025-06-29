@@ -5,7 +5,6 @@ from portfolio.models import Portfolio
 
 User = get_user_model()
 
-
 class AIGenerationRequest(models.Model):
     """Модель для отслеживания всех AI запросов пользователей"""
     
@@ -25,6 +24,10 @@ class AIGenerationRequest(models.Model):
         ('business', 'Бизнес'),
         ('dark', 'Темная тема'),
         ('colorful', 'Яркий'),
+        ('elegant', 'Элегантный'),
+        ('playful', 'Игривый'),
+        ('corporate', 'Корпоративный'),
+        ('artistic', 'Художественный'),
     ]
     
     # Основная информация
@@ -35,7 +38,7 @@ class AIGenerationRequest(models.Model):
     style = models.CharField(max_length=50, choices=STYLE_CHOICES, default='modern')
     
     # Результат генерации
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='processing')
     portfolio_created = models.ForeignKey(
         Portfolio, 
         null=True, 
@@ -154,6 +157,8 @@ class AIPromptTemplate(models.Model):
         ('ecommerce', 'Магазин'),
         ('corporate', 'Корпоративный'),
         ('creative', 'Креативный'),
+        ('restaurant', 'Ресторан'),
+        ('health', 'Медицина'),
         ('other', 'Другое'),
     ]
     

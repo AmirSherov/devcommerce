@@ -121,26 +121,34 @@ export default function AIGeneratorModal({ isOpen, onClose, onSuccess, isPremium
     setCurrentStep(2);
 
     try {
-      const result = await aiAPI.generatePortfolio({
+      const result = await aiAPI.premiumGenerate({
         title: formData.title.trim(),
         description: formData.description.trim(),
         prompt: formData.prompt.trim(),
         style: formData.style,
-        tags: formData.tags
+        tags: formData.tags,
+        industry: 'general'
       });
 
       if (result.success) {
         setCurrentStep(3);
+        
+        console.log('🎉 ПРЕМИУМ ГЕНЕРАЦИЯ ЗАВЕРШЕНА!');
+        console.log('✅ Улучшения:', result.generation_info?.enhanced_features);
+        console.log('🚀 Время генерации:', result.generation_info?.response_time, 'сек');
+        console.log('⚡ Шагов выполнено:', result.generation_info?.generation_steps);
+        
         setTimeout(() => {
-          onSuccess(result.portfolio, result.response_time);
+          onSuccess(result.portfolio, result.generation_info?.response_time);
           handleClose();
         }, 2000);
       } else {
-        setError(result.error || 'Ошибка генерации');
+        setError(result.error || 'Ошибка создания шедевра');
         setCurrentStep(1);
       }
     } catch (error: any) {
-      setError(error.message || 'Произошла ошибка при генерации');
+      console.error('💥 Ошибка премиум генерации:', error);
+      setError(error.message || 'Произошла ошибка при создании шедевра');
       setCurrentStep(1);
     } finally {
       setIsGenerating(false);
@@ -379,20 +387,50 @@ export default function AIGeneratorModal({ isOpen, onClose, onSuccess, isPremium
           {currentStep === 2 && (
             <div className="text-center py-8">
               <div className="w-12 h-12 mx-auto mb-4 bg-white rounded-full flex items-center justify-center animate-pulse">
-                <span className="text-black text-xl font-bold">AI</span>
+                <span className="text-black text-xl font-bold">🚀</span>
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Генерируем сайт...</h3>
-              <div className="space-y-1 text-gray-400 text-sm">
-                <p>• Анализируем промпт</p>
-                <p>• Создаём структуру</p>
-                <p>• Собираем код</p>
-              </div>
-              <div className="mt-4">
-                <div className="w-full bg-gray-800 border border-white rounded-full h-1">
-                  <div className="bg-white h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              <h3 className="text-lg font-bold text-white mb-3">Создаем ШЕДЕВР с помощью AI...</h3>
+              <div className="space-y-2 text-gray-400 text-sm">
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  <p>🔍 Анализируем ваш бизнес и индустрию</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse delay-75"></span>
+                  <p>🏗️ Проектируем архитектуру и UX</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse delay-150"></span>
+                  <p>🎨 Создаем уникальную дизайн-концепцию</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse delay-200"></span>
+                  <p>✍️ Пишем продающий контент</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse delay-300"></span>
+                  <p>🖼️ Подбираем качественные изображения</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse delay-[400ms]"></span>
+                  <p>⚡ Добавляем интерактивность</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse delay-500"></span>
+                  <p>🎯 Собираем и оптимизируем</p>
                 </div>
               </div>
-              <p className="text-gray-500 text-xs mt-3">Обычно занимает 10-30 секунд</p>
+              <div className="mt-6">
+                <div className="w-full bg-gray-800 border border-white rounded-full h-2 overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full animate-pulse" style={{ width: '75%' }}></div>
+                </div>
+              </div>
+              <p className="text-gray-500 text-xs mt-4">
+                🚀 <strong>ПРЕМИУМ ПРОЦЕСС:</strong> 7 шагов к совершенству
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                ⏱️ Обычно занимает 45-60 секунд
+              </p>
             </div>
           )}
 
