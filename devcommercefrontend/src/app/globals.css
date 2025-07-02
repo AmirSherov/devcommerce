@@ -63,6 +63,30 @@ body {
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* Исправляем скрол на мобильных устройствах */
+@media (max-width: 768px) {
+  html {
+    /* Исправляем проблему с высотой viewport на мобильных */
+    height: 100%;
+  }
+  
+  body {
+    /* Убираем overflow-x: hidden только на мобильных если он мешает скролу */
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* Включаем smooth scrolling на iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Отключаем bounce эффект на iOS если нужно */
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Исправляем проблему с viewport height на мобильных браузерах */
+  #__next {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;

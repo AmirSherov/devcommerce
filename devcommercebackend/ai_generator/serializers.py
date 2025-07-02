@@ -235,58 +235,149 @@ class AIStyleStatsSerializer(serializers.Serializer):
     average_response_time = serializers.FloatField()
 
 
-class AIGenerationRequestSerializer(serializers.Serializer):
-    """Сериализатор для запроса AI генерации"""
-    
-    prompt = serializers.CharField(
-        max_length=2000,
-        help_text="Описание сайта для AI генерации"
-    )
-    title = serializers.CharField(
-        max_length=200,
-        help_text="Название сайта"
-    )
-    description = serializers.CharField(
-        max_length=500,
+class PersonalInfoSerializer(serializers.Serializer):
+    """Персональная информация"""
+    firstName = serializers.CharField(max_length=100, help_text="Имя")
+    lastName = serializers.CharField(max_length=100, help_text="Фамилия")
+    profession = serializers.CharField(max_length=200, help_text="Профессия/специализация")
+    bio = serializers.CharField(required=False, allow_blank=True, help_text="О себе")
+    location = serializers.CharField(required=False, allow_blank=True, help_text="Местоположение")
+
+class EducationSerializer(serializers.Serializer):
+    """Образование"""
+    university = serializers.CharField(max_length=300, help_text="Учебное заведение")
+    degree = serializers.CharField(required=False, allow_blank=True, help_text="Степень/квалификация")
+    field = serializers.CharField(max_length=200, help_text="Специальность")
+    graduationYear = serializers.CharField(required=False, allow_blank=True, help_text="Год окончания")
+    diplomaImage = serializers.ImageField(required=False, help_text="Фото диплома")
+
+class ExperienceSerializer(serializers.Serializer):
+    """Опыт работы"""
+    company = serializers.CharField(max_length=200, help_text="Компания")
+    position = serializers.CharField(max_length=200, help_text="Должность")
+    duration = serializers.CharField(max_length=100, help_text="Период работы")
+    description = serializers.CharField(required=False, allow_blank=True, help_text="Описание обязанностей")
+    achievements = serializers.ListField(
+        child=serializers.CharField(max_length=300),
         required=False,
-        allow_blank=True,
-        help_text="Дополнительное описание"
+        default=list,
+        help_text="Ключевые достижения"
     )
+
+class SkillsSerializer(serializers.Serializer):
+    """Навыки"""
+    technical = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        default=list,
+        help_text="Технические навыки"
+    )
+    tools = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        default=list,
+        help_text="Инструменты и ПО"
+    )
+    languages = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        default=list,
+        help_text="Языки программирования"
+    )
+    soft = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        default=list,
+        help_text="Личные качества"
+    )
+
+class ProjectSerializer(serializers.Serializer):    
+    """Проект"""
+    name = serializers.CharField(max_length=200, help_text="Название проекта")
+    description = serializers.CharField(required=False, allow_blank=True, help_text="Описание проекта")
+    technologies = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        default=list,
+        help_text="Используемые технологии"
+    )
+    link = serializers.URLField(required=False, allow_blank=True, help_text="Ссылка на проект")
+
+class ContactsSerializer(serializers.Serializer):
+    """Контакты"""
+    email = serializers.EmailField(help_text="Email для связи")
+    phone = serializers.CharField(required=False, allow_blank=True, max_length=20, help_text="Телефон")
+    linkedin = serializers.URLField(required=False, allow_blank=True, help_text="LinkedIn профиль")
+    github = serializers.URLField(required=False, allow_blank=True, help_text="GitHub профиль")
+    website = serializers.URLField(required=False, allow_blank=True, help_text="Личный сайт")
+    telegram = serializers.CharField(required=False, allow_blank=True, max_length=50, help_text="Telegram")
+
+class DesignPreferencesSerializer(serializers.Serializer):
+    """Настройки дизайна"""
     style = serializers.ChoiceField(
         choices=[
             ('modern', 'Современный'),
-            ('minimal', 'Минимализм'),
             ('creative', 'Креативный'),
-            ('business', 'Бизнес'),
-            ('dark', 'Темная тема'),
-            ('colorful', 'Яркий'),
-            ('elegant', 'Элегантный'),
-            ('playful', 'Игривый'),
+            ('minimal', 'Минималистичный'),
             ('corporate', 'Корпоративный'),
-            ('artistic', 'Художественный'),
+            ('dark', 'Темный'),
+            ('colorful', 'Яркий'),
         ],
         default='modern',
         help_text="Стиль дизайна"
     )
-    tags = serializers.ListField(
-        child=serializers.CharField(max_length=50),
-        required=False,
-        allow_empty=True,
-        help_text="Теги для сайта"
+    colorScheme = serializers.ChoiceField(
+        choices=[
+            ('professional', 'Профессиональная'),
+            ('creative', 'Креативная'),
+            ('minimal', 'Минимальная'),
+            ('warm', 'Теплая'),
+            ('cool', 'Холодная'),
+            ('nature', 'Природная'),
+        ],
+        default='professional',
+        help_text="Цветовая схема"
     )
+    theme = serializers.ChoiceField(
+        choices=[
+            ('clean', 'Чистая'),
+            ('bold', 'Смелая'),
+            ('elegant', 'Элегантная'),
+            ('playful', 'Игривая'),
+            ('serious', 'Серьезная'),
+        ],
+        default='clean',
+        help_text="Тема"
+    )
+
+class AIGenerationRequestSerializer(serializers.Serializer):
+    """Сериализатор для запроса AI генерации персонального портфолио"""
     
-    def validate_prompt(self, value):
-        """Валидация промпта"""
-        if len(value.strip()) < 10:
-            raise serializers.ValidationError(
-                "Промпт должен содержать минимум 10 символов"
-            )
-        return value.strip()
+    personal_info = PersonalInfoSerializer(help_text="Персональная информация")
+    education = EducationSerializer(required=False, help_text="Образование")
+    experience = ExperienceSerializer(many=True, required=False, help_text="Опыт работы")
+    skills = SkillsSerializer(help_text="Навыки и технологии")
+    projects = ProjectSerializer(many=True, required=False, help_text="Проекты и работы")
+    contacts = ContactsSerializer(help_text="Контактная информация")
+    design_preferences = DesignPreferencesSerializer(help_text="Настройки дизайна")
+    profile_photo = serializers.ImageField(required=False, help_text="Фото профиля")
     
-    def validate_title(self, value):
-        """Валидация названия"""
-        if len(value.strip()) < 3:
-            raise serializers.ValidationError(
-                "Название должно содержать минимум 3 символа"
-            )
-        return value.strip() 
+    def validate_personal_info(self, value):
+        """Валидация персональной информации"""
+        if not value.get('firstName') or not value.get('lastName'):
+            raise serializers.ValidationError("Имя и фамилия обязательны")
+        if not value.get('profession'):
+            raise serializers.ValidationError("Укажите вашу профессию")
+        return value
+    
+    def validate_skills(self, value):
+        """Валидация навыков"""
+        if not value.get('technical') or len(value.get('technical', [])) == 0:
+            raise serializers.ValidationError("Добавьте хотя бы один технический навык")
+        return value
+
+    def validate_projects(self, value):
+        """Валидация проектов"""
+        if not value or len(value) == 0:
+            raise serializers.ValidationError("Добавьте хотя бы один проект")
+        return value 

@@ -5,44 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import './style.scss';
 import SimpleLoader from '../../components/simple-loader';
-import { Sidebar, SidebarBody, SidebarLink } from '../../components/ui/sidebar';
-import { motion } from 'motion/react';
-import { cn } from '../../lib/utils';
-
-// Иконки для sidebar
-const DashboardIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="7" height="7"></rect>
-    <rect x="14" y="3" width="7" height="7"></rect>
-    <rect x="14" y="14" width="7" height="7"></rect>
-    <rect x="3" y="14" width="7" height="7"></rect>
-  </svg>
-);
-
-const ProfileIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-    <circle cx="12" cy="7" r="4"></circle>
-  </svg>
-);
-
-const SettingsIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"></circle>
-    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m18-4a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
-  </svg>
-);
-
-const LogoutIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-    <polyline points="16,17 21,12 16,7"></polyline>
-    <line x1="21" y1="12" x2="9" y2="12"></line>
-  </svg>
-);
+import DashboardLayout from '../../components/ui/dashboard-layout';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading, logout, updateProfile } = useAuth();
+  const { user, isAuthenticated, isLoading, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -70,15 +36,6 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout();
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  }, [logout, router]);
-
   const handleUpdateProfile = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -91,8 +48,6 @@ export default function Dashboard() {
       setTimeout(() => setMessage(''), 3000);
     }
   }, [editForm, updateProfile]);
-
-
 
   const handleEditFormChange = useCallback((field: string, value: string) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
@@ -107,29 +62,6 @@ export default function Dashboard() {
     return null;
   }
 
-  const links = [
-    {
-      label: "Dashboard",
-      href: "#",
-      icon: <DashboardIcon />,
-    },
-    {
-      label: "Profile",
-      href: "/u/me",
-      icon: <ProfileIcon />,
-    },
-    {
-      label: "Settings",
-      href: "#",
-      icon: <SettingsIcon />,
-    },
-    {
-      label: "Logout",
-      href: "#",
-      icon: <LogoutIcon />,
-    },
-  ];
-
   const renderContent = () => {
     switch (activeSection) {
       case 'profile':
@@ -137,9 +69,6 @@ export default function Dashboard() {
           <div className="profile-section">
             <div className="profile-card">
               <h2>Profile Information</h2>
-              
-
-
               {!isEditing ? (
                 <div className="profile-info">
                   <div className="info-item">
@@ -245,67 +174,14 @@ export default function Dashboard() {
   };
 
   return (
-    <div className={cn(
-      "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden",
-      "h-screen"
-    )}>
-      <Sidebar>
-        <SidebarBody className="justify-between gap-10">
-          <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="mt-8 flex flex-col gap-2">
-              {links.map((link, idx) => (
-                <div key={idx} onClick={() => {
-                  if (link.label === 'Logout') {
-                    handleLogout();
-                  } else if (link.label === 'Profile') {
-                    router.push('/u/me');
-                  } else {
-                    setActiveSection(link.label.toLowerCase());
-                  }
-                }}>
-                  <SidebarLink 
-                    link={{
-                      ...link,
-                      href: '#'
-                    }}
-                    className={cn(
-                      "cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg px-2 py-2",
-                      activeSection === link.label.toLowerCase() ? "bg-neutral-200 dark:bg-neutral-700" : ""
-                    )}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div onClick={() => router.push('/u/me')} className="cursor-pointer">
-            <SidebarLink
-              link={{
-                label: user.username || user.email,
-                href: "#",
-                icon: (
-                  <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                    {(user.username || user.email).charAt(0).toUpperCase()}
-                  </div>
-                ),
-              }}
-            />
-          </div>
-        </SidebarBody>
-      </Sidebar>
-      
-      <div className="flex flex-1">
-        <div className="p-2 md:p-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full overflow-y-auto">
-          {message && (
-            <div className={`message ${message.includes('Error') ? 'error' : 'success'} mb-4 p-4 rounded-lg`}>
-              {message}
-            </div>
-          )}
-          
-          {renderContent()}
-
-
+    <DashboardLayout activePage="dashboard">
+      {message && (
+        <div className={`message ${message.includes('Error') ? 'error' : 'success'} mb-4 p-4 rounded-lg`}>
+          {message}
         </div>
-      </div>
-    </div>
+      )}
+      
+      {renderContent()}
+    </DashboardLayout>
   );
 } 

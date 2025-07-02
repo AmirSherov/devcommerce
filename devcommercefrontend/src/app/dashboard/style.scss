@@ -1,4 +1,8 @@
-// Dashboard with Sidebar Styles
+// Dashboard with Sidebar Styles - Черная тема
+* {
+  color: white;
+}
+
 .dashboard-overview {
   h1 {
     font-size: 2.5rem;
@@ -17,42 +21,29 @@
     margin-top: 2rem;
 
     .stat-card {
-      background: white;
+      background: #111111;
       border-radius: 12px;
       padding: 1.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.05);
+      border: 1px solid #2a2a2a;
       transition: all 0.3s ease;
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 15px -3px rgba(0, 112, 243, 0.2);
+        border-color: rgba(0, 112, 243, 0.5);
       }
 
       h3 {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #374151;
+        color: #ffffff;
         margin-bottom: 0.5rem;
       }
 
       p {
-        color: #6b7280;
+        color: #888888;
         font-size: 0.9rem;
-      }
-
-      // Dark mode
-      .dark & {
-        background: #1f2937;
-        border-color: #374151;
-        
-        h3 {
-          color: #f9fafb;
-        }
-        
-        p {
-          color: #d1d5db;
-        }
       }
     }
   }
@@ -295,30 +286,15 @@
   margin-bottom: 1rem;
 
   &.success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
+    background: rgba(0, 212, 170, 0.1);
+    color: #00d4aa;
+    border: 1px solid rgba(0, 212, 170, 0.3);
   }
 
   &.error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
-  }
-
-  // Dark mode
-  .dark & {
-    &.success {
-      background: #064e3b;
-      color: #a7f3d0;
-      border-color: #047857;
-    }
-
-    &.error {
-      background: #7f1d1d;
-      color: #fca5a5;
-      border-color: #dc2626;
-    }
+    background: rgba(229, 62, 62, 0.1);
+    color: #e53e3e;
+    border: 1px solid rgba(229, 62, 62, 0.3);
   }
 }
 

@@ -1,6 +1,6 @@
 # 🤖 AI Генератор Портфолио - Руководство по установке
 
-Полное руководство по настройке AI генератора портфолио с интеграцией DeepSeek API.
+Полное руководство по настройке AI генератора портфолио с интеграцией OpenAI ChatGPT API.
 
 ## 📋 Обзор функциональности
 
@@ -27,10 +27,10 @@
 Добавьте в ваш `.env` файл:
 
 ```env
-# DeepSeek AI Settings
-DEEPSEEK_API_KEY=your-deepseek-api-key-here
-DEEPSEEK_API_URL=https://api.deepseek.com/v1/chat/completions
-DEEPSEEK_MODEL=deepseek-chat
+# OpenAI ChatGPT Settings
+OPENAI_API_KEY=your-openai-api-key-here
+OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_API_URL=https://api.openai.com/v1
 
 # AI Generation Settings (опционально)
 AI_GENERATION_TIMEOUT=30
@@ -52,12 +52,12 @@ python manage.py makemigrations ai_generator
 python manage.py migrate
 ```
 
-### 4. Получение DeepSeek API ключа
+### 4. Получение OpenAI API ключа
 
-1. Регистрируйтесь на [DeepSeek Platform](https://platform.deepseek.com)
+1. Регистрируйтесь на [OpenAI Platform](https://platform.openai.com)
 2. Переходите в API Keys раздел
 3. Создайте новый API ключ
-4. Скопируйте в переменную `DEEPSEEK_API_KEY`
+4. Скопируйте в переменную `OPENAI_API_KEY`
 
 ## 🎨 Frontend интеграция
 
@@ -207,12 +207,12 @@ LOGGING = {
 
 ### Тестирование без API:
 
-Для тестирования без реального DeepSeek API, можете создать mock:
+Для тестирования без реального OpenAI API, можете создать mock:
 
 ```python
 # В ai_generator/services.py
 class MockAIGenerationService(AIGenerationService):
-    async def call_deepseek_api(self, prompt: str):
+    async def call_openai_api(self, prompt: str):
         return {
             "choices": [{
                 "message": {
@@ -276,7 +276,7 @@ def build_ai_prompt(self, user_prompt: str, style: str = "modern") -> str:
 1. Проверьте логи Django: `python manage.py runserver`
 2. Проверьте консоль браузера на ошибки
 3. Убедитесь что API ключ корректный
-4. Проверьте статус серверов DeepSeek
+4. Проверьте статус серверов OpenAI
 
 ---
 

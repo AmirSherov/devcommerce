@@ -11,36 +11,11 @@ class AIAPIError extends Error {
 
 export const aiAPI = {
   /**
-   * Генерация портфолио через AI
+   * 🚀 ЕДИНСТВЕННЫЙ МЕТОД ДЛЯ ГЕНЕРАЦИИ ПОРТФОЛИО
+   * Оптимизированная генерация с одним запросом к AI
    */
   async generatePortfolio(data) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/generate/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new AIAPIError(
-          result.error || 'Ошибка генерации',
-          result.error_code || 'UNKNOWN',
-          response.status
-        );
-      }
-
-      return result;
-    } catch (error) {
-      if (error instanceof AIAPIError) {
-        throw error;
-      }
-      throw new AIAPIError('Ошибка сети', 'NETWORK_ERROR', 0);
-    }
+    return this.smartGenerate(data);
   },
 
   /**
@@ -185,50 +160,52 @@ export const aiAPI = {
   },
 
   /**
-   * 🚀 ПРЕМИУМ генерация сайта через революционный 7-шаговый AI
-   */
-  async premiumGenerate(data) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/premium-generate/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new AIAPIError(
-          result.error || 'Ошибка премиум генерации',
-          result.error_code || 'PREMIUM_ERROR',
-          response.status
-        );
-      }
-
-      return result;
-    } catch (error) {
-      if (error instanceof AIAPIError) {
-        throw error;
-      }
-      throw new AIAPIError('Ошибка сети при премиум генерации', 'NETWORK_ERROR', 0);
-    }
-  },
-
-  /**
-   * Умная генерация сайта через новый AI (улучшенный)
+   * 🚀 ОПТИМИЗИРОВАННАЯ генерация портфолио - один запрос к AI!
    */
   async smartGenerate(data) {
     try {
+      // Проверяем тип данных и используем соответствующий формат
+      let requestBody;
+      let headers = { ...getAuthHeaders() };
+      
+      // Если есть файлы, используем FormData
+      if (data.profile_photo || (data.education && data.education.diplomaImage)) {
+        const formData = new FormData();
+        
+        // Добавляем JSON данные
+        formData.append('personal_info', JSON.stringify(data.personal_info));
+        formData.append('education', JSON.stringify({
+          university: data.education?.university || '',
+          degree: data.education?.degree || '',
+          field: data.education?.field || '',
+          graduationYear: data.education?.graduationYear || ''
+        }));
+        formData.append('experience', JSON.stringify(data.experience || []));
+        formData.append('skills', JSON.stringify(data.skills || {}));
+        formData.append('projects', JSON.stringify(data.projects || []));
+        formData.append('contacts', JSON.stringify(data.contacts || {}));
+        formData.append('design_preferences', JSON.stringify(data.design_preferences || {}));
+        
+        // Добавляем файлы если есть
+        if (data.profile_photo) {
+          formData.append('profile_photo', data.profile_photo);
+        }
+        if (data.education?.diplomaImage) {
+          formData.append('diplomaImage', data.education.diplomaImage);
+        }
+        
+        requestBody = formData;
+        // Не устанавливаем Content-Type для FormData
+      } else {
+        // Обычный JSON запрос
+        headers['Content-Type'] = 'application/json';
+        requestBody = JSON.stringify(data);
+      }
+
       const response = await fetch(`${API_BASE_URL}/ai/smart-generate/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(data),
+        headers,
+        body: requestBody
       });
 
       const result = await response.json();
@@ -246,6 +223,7 @@ export const aiAPI = {
       if (error instanceof AIAPIError) {
         throw error;
       }
+      console.error('AI Generation Error:', error);
       throw new AIAPIError('Ошибка сети', 'NETWORK_ERROR', 0);
     }
   },

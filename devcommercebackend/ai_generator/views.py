@@ -21,116 +21,183 @@ from .models import (
     AIPromptTemplate, GlobalAIStats
 )
 from .serializers import (
-    AIGenerateRequestSerializer, AIGenerateResponseSerializer,
     AIGenerationRequestListSerializer, AIGenerationStatsSerializer,
     AIPromptTemplateSerializer, AIUserStatsSerializer,
     AILimitsSerializer, AIStyleStatsSerializer,
     AIGenerationRequestSerializer
 )
-from .services import sync_generate_portfolio
 from .smart_generator import SmartAIGenerator
+from .image_service import upload_user_profile_photo, upload_user_diploma_image
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def ai_generate_portfolio(request):
-    """Генерация портфолио через AI"""
-    try:
-        # Валидация входных данных
-        serializer = AIGenerateRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'error': 'Ошибка валидации данных',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Подготавливаем данные для генерации
-        validated_data = serializer.validated_data
-        request_data = {
-            'user': request.user,
-            'title': validated_data['title'],
-            'description': validated_data.get('description', ''),
-            'prompt': validated_data['prompt'],
-            'style': validated_data.get('style', 'modern'),
-            'tags': validated_data.get('tags', [])
-        }
-        
-        # Добавляем автоматические теги
-        auto_tags = ['ai-generated', request_data['style']]
-        request_data['tags'].extend(auto_tags)
-        request_data['tags'] = list(set(request_data['tags']))  # Удаляем дубликаты
-        
-        # Запускаем генерацию
-        result = sync_generate_portfolio(request_data)
-        
-        # Форматируем ответ
-        response_serializer = AIGenerateResponseSerializer(result)
-        
-        if result['success']:
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            # Определяем HTTP статус по коду ошибки
-            error_code = result.get('error_code', 'UNKNOWN')
-            if error_code == 'LIMIT_EXCEEDED':
-                http_status = status.HTTP_429_TOO_MANY_REQUESTS
-            elif error_code == 'TIMEOUT':
-                http_status = status.HTTP_408_REQUEST_TIMEOUT
-            else:
-                http_status = status.HTTP_500_INTERNAL_SERVER_ERROR
-            
-            return Response(response_serializer.data, status=http_status)
-        
-    except Exception as e:
-        logger.error(f"Unexpected error in ai_generate_portfolio: {str(e)}")
-        return Response({
-            'success': False,
-            'error': 'Внутренняя ошибка сервера',
-            'error_code': 'INTERNAL_ERROR'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# Старый генератор удален - используйте smart-generate
 
 
 class SmartAIGenerationView(APIView):
     """
-    🚀 РЕВОЛЮЦИОННЫЙ AI ГЕНЕРАТОР САЙТОВ МИРОВОГО УРОВНЯ!
+    🚀 РЕВОЛЮЦИОННЫЙ AI ГЕНЕРАТОР ПОРТФОЛИО МИРОВОГО УРОВНЯ!
     
-    Теперь с 7-шаговым процессом премиум генерации и автоматическими изображениями!
+    Теперь с 7-шаговым процессом премиум генерации, загрузкой изображений и S3 интеграцией!
     """
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        """Генерация сайта через ПРЕМИУМ AI процесс"""
+        """Генерация персонального портфолио через ПРЕМИУМ AI процесс"""
         
         try:
-            serializer = AIGenerationRequestSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response({
-                    'success': False,
-                    'error': 'Некорректные данные',
-                    'details': serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            # 🔧 ИСПРАВЛЯЕМ ОБРАБОТКУ FORMDATA С ФАЙЛАМИ
             
+            # Если данные приходят как FormData (с файлами), парсим JSON строки
+            if request.content_type and 'multipart/form-data' in request.content_type:
+                logger.info("📦 Обрабатываем FormData с файлами")
+                
+                # Парсим JSON данные из FormData
+                try:
+                    import json
+                    
+                    # Логируем что приходит в FormData
+                    logger.info(f"📋 FormData ключи: {list(request.data.keys())}")
+                    logger.info(f"📁 FILES ключи: {list(request.FILES.keys())}")
+                    
+                    personal_info = json.loads(request.data.get('personal_info', '{}'))
+                    education_data = json.loads(request.data.get('education', '{}'))
+                    experience = json.loads(request.data.get('experience', '[]'))
+                    skills = json.loads(request.data.get('skills', '{}'))
+                    projects = json.loads(request.data.get('projects', '[]'))
+                    contacts = json.loads(request.data.get('contacts', '{}'))
+                    design_preferences = json.loads(request.data.get('design_preferences', '{}'))
+                    
+                    profile_photo = request.FILES.get('profile_photo')
+                    diploma_image = request.FILES.get('diplomaImage')
+                    
+                    logger.info(f"📸 profile_photo: {profile_photo.name if profile_photo else 'None'}")
+                    logger.info(f"🎓 diploma_image: {diploma_image.name if diploma_image else 'None'}")
+                    
+                    # Добавляем файл диплома к education
+                    education = education_data.copy()
+                    if diploma_image:
+                        education['diplomaImage'] = diploma_image
+                    
+                    logger.info(f"✅ Данные распарсены: personal_info={bool(personal_info)}, education={bool(education)}")
+                    
+                    # 🔍 Базовая валидация данных из FormData. Упрощена.
+                    validation_errors = {}
+                    
+                    # Проверяем обязательные поля personal_info
+                    if not personal_info.get('firstName') or not personal_info.get('lastName') or not personal_info.get('profession'):
+                        validation_errors.setdefault('personal_info', []).append('Имя, фамилия и профессия обязательны')
+                    
+                    # Проверяем skills
+                    if not skills.get('technical'):
+                        validation_errors.setdefault('skills', []).append('Добавьте хотя бы один технический навык')
+                    
+                    # Проверяем contacts
+                    if not contacts.get('email'):
+                        validation_errors.setdefault('contacts', []).append('Email обязателен')
+                    
+                    if validation_errors:
+                        logger.error(f"❌ Ошибки валидации FormData: {validation_errors}")
+                        return Response({
+                            'success': False,
+                            'error': 'Данные не прошли валидацию',
+                            'details': validation_errors
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    logger.info("✅ Валидация FormData прошла успешно")
+                    
+                except (json.JSONDecodeError, KeyError) as e:
+                    logger.error(f"❌ Ошибка парсинга FormData: {str(e)}")
+                    return Response({
+                        'success': False,
+                        'error': 'Ошибка обработки данных с файлами',
+                        'details': str(e)
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            else:
+                # Обычная JSON обработка
+                logger.info("📝 Обрабатываем обычный JSON")
+                serializer = AIGenerationRequestSerializer(data=request.data)
+                if not serializer.is_valid():
+                    return Response({
+                        'success': False,
+                        'error': 'Некорректные данные',
+                        'details': serializer.errors
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Извлекаем данные из сериализатора
+                personal_info = serializer.validated_data['personal_info']
+                # Поля education, experience, projects больше не обязательны
+                education = serializer.validated_data.get('education', {})
+                experience = serializer.validated_data.get('experience', [])
+                skills = serializer.validated_data['skills']
+                projects = serializer.validated_data.get('projects', [])
+                contacts = serializer.validated_data['contacts']
+                design_preferences = serializer.validated_data['design_preferences']
+                profile_photo = serializer.validated_data.get('profile_photo')
+            
+            # 🖼️ ОБРАБОТКА ИЗОБРАЖЕНИЙ
+            profile_photo_data = None
+            diploma_image_url = None
+            
+            # Загружаем фото профиля если есть
+            if profile_photo:
+                logger.info(f"📸 Загружаем фото профиля для {request.user.username}")
+                photo_result = upload_user_profile_photo(request.user, profile_photo)
+                if photo_result:
+                    profile_photo_url, ai_analysis = photo_result
+                    profile_photo_data = {
+                        'url': profile_photo_url,
+                        'ai_analysis': ai_analysis
+                    }
+                    logger.info(f"✅ Фото профиля загружено: {profile_photo_url}")
+                else:
+                    logger.warning("⚠️ Не удалось загрузить фото профиля")
+            
+            # Загружаем диплом если есть
+            diploma_image = education.get('diplomaImage') if isinstance(education, dict) else getattr(education, 'diplomaImage', None)
+            if diploma_image:
+                logger.info(f"🎓 Загружаем диплом для {request.user.username}")
+                diploma_image_url = upload_user_diploma_image(request.user, diploma_image)
+                if diploma_image_url:
+                    logger.info(f"✅ Диплом загружен: {diploma_image_url}")
+                else:
+                    logger.warning("⚠️ Не удалось загрузить диплом")
+            
+            # Формируем название портфолио
+            full_name = f"{personal_info['firstName']} {personal_info['lastName']}"
+            portfolio_title = f"Портфолио {full_name} - {personal_info['profession']}"
+            
+            # Подготавливаем данные для AI генерации
             request_data = {
                 'user': request.user,
-                'prompt': serializer.validated_data['prompt'],
-                'title': serializer.validated_data['title'],
-                'description': serializer.validated_data.get('description', ''),
-                'style': serializer.validated_data.get('style', 'modern'),
-                'tags': serializer.validated_data.get('tags', []),
-                'industry': serializer.validated_data.get('industry', 'general')
+                'title': portfolio_title,
+                'personal_info': personal_info,
+                'education': education,
+                'experience': experience,
+                'skills': skills,
+                'projects': projects,
+                'contacts': contacts,
+                'design_preferences': design_preferences,
+                'profile_photo_data': profile_photo_data,  # Включаем данные фото
+                'diploma_image_url': diploma_image_url,    # Включаем URL диплома
+                'portfolio_type': 'personal'
             }
             
-            logger.info(f"🚀 [PREMIUM AI] Запрос РЕВОЛЮЦИОННОЙ генерации от {request.user.username}")
+            logger.info(f"🚀 [PREMIUM AI] Запрос СУПЕР генерации от {request.user.username}")
+            if profile_photo_data:
+                logger.info("🎨 + Персональное фото для уникального дизайна")
+            if diploma_image_url:
+                logger.info("🎓 + Диплом для подтверждения образования")
             
-            # Создаем ПРЕМИУМ генератор и запускаем 7-шаговый процесс
+            # Создаем AI генератор с одним оптимизированным запросом
             generator = SmartAIGenerator()
-            result = generator.generate_website_premium(request_data)
+            result = generator.generate_portfolio_optimized(request_data)
             
             if result['success']:
-                logger.info(f"🎉 [PREMIUM AI] ✅ ШЕДЕВР создан для {request.user.username}!")
+                logger.info(f"🎉 [PREMIUM AI] ✅ ШЕДЕВР с изображениями создан для {request.user.username}!")
                 
                 # Формируем расширенный ответ с информацией о премиум процессе
                 response_data = {
@@ -149,14 +216,24 @@ class SmartAIGenerationView(APIView):
                         'response_time': round(result.get('response_time', 0), 2),
                         'generation_steps': result.get('generation_steps', 7),
                         'enhanced_features': result.get('enhanced_features', []),
-                        'process_type': 'premium_7_step'
+                        'process_type': 'premium_7_step_with_images'
                     },
                     'premium_features': {
-                        'business_analysis': True,
+                        'personal_analysis': True,
+                        'career_optimization': True,
+                        'skills_highlighting': True,
+                        'projects_showcase': True,
                         'unique_design': True,
-                        'professional_copy': True,
-                        'auto_images': True,
-                        'modern_interactions': True
+                        'professional_styling': True,
+                        'responsive_layout': True,
+                        'profile_photo_integration': profile_photo_data is not None,
+                        'diploma_verification': diploma_image_url is not None,
+                        'ai_photo_analysis': profile_photo_data is not None
+                    },
+                    'images_data': {
+                        'profile_photo': profile_photo_data,
+                        'diploma_image': diploma_image_url,
+                        'ai_recommendations': profile_photo_data.get('ai_analysis', {}).get('ai_recommendations', []) if profile_photo_data else []
                     }
                 }
                 
@@ -181,132 +258,7 @@ class SmartAIGenerationView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PremiumAIGenerationWithProgressView(APIView):
-    """
-    🎯 ПРЕМИУМ ГЕНЕРАЦИЯ С ПОКАЗОМ ПРОГРЕССА
-    
-    WebSocket-like API для отслеживания прогресса 7-шагового процесса
-    """
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def post(self, request):
-        """Запуск премиум генерации с детальным прогрессом"""
-        
-        try:
-            # Валидация данных
-            serializer = AIGenerationRequestSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response({
-                    'success': False,
-                    'error': 'Некорректные данные',
-                    'details': serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Создаем кастомный генератор с callback'ами прогресса
-            generator = ProgressTrackingGenerator(user=request.user)
-            
-            request_data = {
-                'user': request.user,
-                'prompt': serializer.validated_data['prompt'],
-                'title': serializer.validated_data['title'],
-                'description': serializer.validated_data.get('description', ''),
-                'style': serializer.validated_data.get('style', 'modern'),
-                'tags': serializer.validated_data.get('tags', []),
-                'industry': serializer.validated_data.get('industry', 'general')
-            }
-            
-            # Запускаем генерацию с трекингом прогресса
-            result = generator.generate_with_progress(request_data)
-            
-            return Response(result)
-            
-        except Exception as e:
-            logger.error(f"💥 [PROGRESS AI] ❌ Ошибка: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Ошибка генерации с прогрессом'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class ProgressTrackingGenerator:
-    """Генератор с отслеживанием прогресса для frontend'а"""
-    
-    def __init__(self, user):
-        self.user = user
-        self.generator = SmartAIGenerator()
-        self.progress_steps = [
-            {"step": 1, "name": "🔍 Анализируем ваш бизнес", "description": "Изучаем индустрию и конкурентов"},
-            {"step": 2, "name": "🏗️ Проектируем архитектуру", "description": "Создаём структуру и навигацию"},
-            {"step": 3, "name": "🎨 Разрабатываем дизайн", "description": "Создаём уникальную концепцию"},
-            {"step": 4, "name": "✍️ Пишем контент", "description": "Создаём продающие тексты"},
-            {"step": 5, "name": "🖼️ Подбираем изображения", "description": "Интегрируем качественные фото"},
-            {"step": 6, "name": "⚡ Добавляем интерактив", "description": "Создаём анимации и эффекты"},
-            {"step": 7, "name": "🎯 Собираем шедевр", "description": "Финальная оптимизация и сборка"}
-        ]
-    
-    def generate_with_progress(self, request_data):
-        """Генерация с детальным прогрессом"""
-        
-        try:
-            start_time = time.time()
-            
-            # Имитируем прогресс для демонстрации
-            progress_data = {
-                'success': True,
-                'status': 'completed',
-                'total_steps': 7,
-                'completed_steps': 7,
-                'current_step': {
-                    'step': 7,
-                    'name': '🎉 Готово!',
-                    'description': 'Ваш сайт создан'
-                },
-                'steps_detail': self.progress_steps,
-                'estimated_time': '45-60 секунд',
-                'actual_time': 0
-            }
-            
-            # Запускаем реальную генерацию
-            result = self.generator.generate_website_premium(request_data)
-            
-            actual_time = round(time.time() - start_time, 2)
-            progress_data['actual_time'] = actual_time
-            
-            if result['success']:
-                progress_data.update({
-                    'portfolio': {
-                        'id': str(result['portfolio'].id),
-                        'title': result['portfolio'].title,
-                        'slug': result['portfolio'].slug,
-                        'public_url': result['portfolio'].public_url,
-                        'is_public': result['portfolio'].is_public,
-                        'created_at': result['portfolio'].created_at.isoformat(),
-                        'tags': result['portfolio'].tags
-                    },
-                    'generation_summary': {
-                        'enhanced_features': result.get('enhanced_features', []),
-                        'business_insights': f"Проанализирован бизнес типа '{request_data.get('industry', 'general')}'",
-                        'design_uniqueness': "Создана уникальная дизайн-концепция",
-                        'images_integrated': "Автоматически подобраны качественные изображения",
-                        'code_quality': "Современный адаптивный код"
-                    }
-                })
-            else:
-                progress_data.update({
-                    'success': False,
-                    'error': result.get('error', 'Ошибка генерации'),
-                    'status': 'failed'
-                })
-            
-            return progress_data
-            
-        except Exception as e:
-            logger.error(f"💥 [PROGRESS] Ошибка: {str(e)}")
-            return {
-                'success': False,
-                'error': f'Ошибка в процессе генерации: {str(e)}',
-                'status': 'failed'
-            }
+# Премиум генератор с прогрессом удален - используйте smart-generate
 
 
 class GetUserLimitsView(APIView):

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'projects',
     'portfolio',
     'ai_generator',
+    'portfolio_templates',
 ]
 
 MIDDLEWARE = [
@@ -184,10 +185,10 @@ AWS_S3_OBJECT_PARAMETERS = {
 
 PORTFOLIO_STORAGE_PATH = 'portfolios/'
 
-# DeepSeek AI Settings
-DEEPSEEK_API_KEY = config('DEEPSEEK_API_KEY', default='sk-b704203b2e8c45f9b6c4d8f9e0a03a1c6b2e4d8f1c3a6b9e0d2c5f8a1b4e7d0c1822')  # Временно захардкодили
-DEEPSEEK_API_URL = config('DEEPSEEK_API_URL', default='https://api.deepseek.com') 
-DEEPSEEK_MODEL = config('DEEPSEEK_MODEL', default='deepseek-chat')  
+# OpenAI ChatGPT Settings
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='your-openai-api-key-here')
+OPENAI_MODEL = config('OPENAI_MODEL', default='gpt-3.5-turbo')
+OPENAI_API_URL = config('OPENAI_API_URL', default='https://api.openai.com/v1')  
 
 # AI Generation Settings
 AI_GENERATION_TIMEOUT = 60  # секунд

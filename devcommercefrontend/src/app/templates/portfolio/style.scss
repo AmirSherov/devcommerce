@@ -1,0 +1,980 @@
+// 🎨 СТИЛИ СТРАНИЦЫ ШАБЛОНОВ В СТИЛЕ VERCEL
+// Максимально темные и черные цвета
+
+// === ЦВЕТОВАЯ ПАЛИТРА VERCEL ===
+$vercel-black: #000000;
+$vercel-dark-gray: #0a0a0a;
+$vercel-medium-gray: #111111;
+$vercel-light-gray: #1a1a1a;
+$vercel-border: #2a2a2a;
+$vercel-text: #ffffff;
+$vercel-muted: #888888;
+$vercel-accent: #0070f3;
+$vercel-success: #00d4aa;
+$vercel-warning: #f5a623;
+$vercel-error: #e53e3e;
+
+// === МИКСИНЫ ===
+@mixin vercel-blur {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@mixin vercel-glow($color: $vercel-accent) {
+  box-shadow: 0 0 20px rgba($color, 0.3);
+}
+
+@mixin vercel-gradient {
+  background: linear-gradient(135deg, rgba(0, 112, 243, 0.1) 0%, rgba(0, 212, 170, 0.1) 100%);
+}
+
+@mixin vercel-card {
+  background: $vercel-medium-gray;
+  border: 1px solid $vercel-border;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: rgba($vercel-accent, 0.5);
+    transform: translateY(-2px);
+    @include vercel-glow($vercel-accent);
+  }
+}
+
+// === БАЗОВЫЕ СТИЛИ ===
+.templates-page {
+  width: 100%;
+  background: $vercel-black;
+  color: $vercel-text;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.6;
+  
+  // На мобильных устройствах используем естественную прокрутку
+  @media (max-width: 768px) {
+    min-height: calc(100vh - 64px); // Вычитаем высоту мобильного header
+    -webkit-overflow-scrolling: touch; // Smooth scrolling на iOS
+    
+    // Обеспечиваем правильную прокрутку
+    overflow-y: visible;
+    overflow-x: hidden;
+  }
+  
+  // На десктопе можем использовать overflow
+  @media (min-width: 769px) {
+    height: 100%;
+    overflow-y: auto;
+    
+    // Убираем скролл бар для WebKit браузеров
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #404040;
+      border-radius: 3px;
+      
+      &:hover {
+        background: #525252;
+      }
+    }
+  }
+}
+
+.templates-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  
+  @media (max-width: 768px) {
+    padding: 0 16px;
+  }
+}
+
+// === HERO SECTION ===
+.templates-hero {
+  padding: 80px 0 60px;
+  text-align: center;
+  background: linear-gradient(180deg, $vercel-black 0%, $vercel-dark-gray 100%);
+  position: relative;
+  overflow: hidden;
+  
+  @media (max-width: 768px) {
+    padding: 40px 0 30px; // Уменьшаем отступы для мобильных
+  }
+  
+  // Анимированный фон
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(0, 112, 243, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(0, 212, 170, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(245, 166, 35, 0.1) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(5px) rotate(-1deg); }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+  
+  .gradient-text {
+    background: linear-gradient(135deg, $vercel-accent 0%, $vercel-success 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: $vercel-muted;
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+.hero-search {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  width: 20px;
+  height: 20px;
+  color: $vercel-muted;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  background: $vercel-medium-gray;
+  border: 1px solid $vercel-border;
+  border-radius: 12px;
+  color: $vercel-text;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  
+  &::placeholder {
+    color: $vercel-muted;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: $vercel-accent;
+    @include vercel-glow($vercel-accent);
+  }
+}
+
+// === ФИЛЬТРЫ ===
+.templates-filters {
+  padding: 40px 0;
+  background: $vercel-dark-gray;
+  border-bottom: 1px solid $vercel-border;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  align-items: end;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: $vercel-text;
+  margin-bottom: 4px;
+}
+
+.filter-select {
+  padding: 12px 16px;
+  background: $vercel-medium-gray;
+  border: 1px solid $vercel-border;
+  border-radius: 8px;
+  color: $vercel-text;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: $vercel-accent;
+  }
+  
+  option {
+    background: $vercel-medium-gray;
+    color: $vercel-text;
+    padding: 8px 12px;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      color: $vercel-accent;
+    }
+  }
+}
+
+.filter-checkboxes {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: $vercel-accent;
+  }
+}
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba($vercel-error, 0.1);
+  border: 1px solid rgba($vercel-error, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+  margin-bottom: 32px;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  
+  .error-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+}
+
+// === СЕТКА ШАБЛОНОВ ===
+.templates-grid-section {
+  padding: 60px 0 80px;
+  background: $vercel-black;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+// === КАРТОЧКА ШАБЛОНА ===
+.template-card {
+  @include vercel-card;
+  overflow: hidden;
+  height: fit-content;
+  
+  &:hover {
+    .preview-overlay {
+      opacity: 1;
+    }
+  }
+}
+
+.template-preview {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  cursor: pointer;
+  background: $vercel-light-gray;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  
+  .template-card:hover & {
+    transform: scale(1.05);
+  }
+}
+
+.preview-iframe-card {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  background: $vercel-dark-gray;
+  transition: transform 0.3s ease;
+  pointer-events: none; // Отключаем взаимодействие с iframe в карточке
+  
+  .template-card:hover & {
+    transform: scale(1.05);
+  }
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, $vercel-medium-gray 0%, $vercel-light-gray 100%);
+  
+  .placeholder-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+    opacity: 0.6;
+    color: $vercel-accent;
+    
+    svg {
+      width: 48px;
+      height: 48px;
+    }
+  }
+  
+  .placeholder-text {
+    color: $vercel-muted;
+    font-size: 14px;
+  }
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($vercel-black, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  @include vercel-blur;
+  
+  .template-card:hover & {
+    opacity: 1;
+  }
+}
+
+.preview-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: $vercel-accent;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  &:hover {
+    background: darken($vercel-accent, 10%);
+    transform: translateY(-1px);
+  }
+}
+
+.template-badges {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  &.badge-featured {
+    background: rgba($vercel-warning, 0.2);
+    color: $vercel-warning;
+    border: 1px solid rgba($vercel-warning, 0.3);
+  }
+  
+  &.badge-premium {
+    background: rgba(138, 43, 226, 0.2);
+    color: #a855f7;
+    border: 1px solid rgba(138, 43, 226, 0.3);
+  }
+}
+
+// === ИНФОРМАЦИЯ О ШАБЛОНЕ ===
+.template-info {
+  padding: 24px;
+}
+
+.template-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.template-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: $vercel-text;
+  line-height: 1.3;
+}
+
+.like-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid $vercel-border;
+  color: $vercel-muted;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  flex-shrink: 0;
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  &:hover {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+  }
+  
+  &.liked {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+  }
+}
+
+.template-description {
+  color: $vercel-muted;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.template-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $vercel-muted;
+  
+  .meta-icon {
+    font-size: 14px;
+    color: $vercel-accent;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+.template-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-top: 1px solid $vercel-border;
+  border-bottom: 1px solid $vercel-border;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: $vercel-muted;
+  
+  .stat-icon {
+    font-size: 14px;
+    color: $vercel-accent;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  .stat-value {
+    font-weight: 500;
+    color: $vercel-text;
+  }
+}
+
+.template-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 4px 8px;
+  background: rgba($vercel-accent, 0.1);
+  color: $vercel-accent;
+  border: 1px solid rgba($vercel-accent, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tag-more {
+  padding: 4px 8px;
+  background: rgba($vercel-muted, 0.1);
+  color: $vercel-muted;
+  border: 1px solid rgba($vercel-muted, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.use-template-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: $vercel-accent;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  &:hover:not(:disabled) {
+    background: darken($vercel-accent, 10%);
+    transform: translateY(-1px);
+    @include vercel-glow($vercel-accent);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(white, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// === СКЕЛЕТОНЫ ЗАГРУЗКИ ===
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.template-card-skeleton {
+  @include vercel-card;
+  overflow: hidden;
+  animation: pulse 2s infinite;
+}
+
+.skeleton-image {
+  height: 200px;
+  background: linear-gradient(90deg, $vercel-light-gray 25%, rgba($vercel-border, 0.5) 50%, $vercel-light-gray 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-content {
+  padding: 24px;
+}
+
+.skeleton-title {
+  height: 20px;
+  background: $vercel-light-gray;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  width: 70%;
+}
+
+.skeleton-description {
+  height: 14px;
+  background: $vercel-light-gray;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.skeleton-tags {
+  height: 14px;
+  background: $vercel-light-gray;
+  border-radius: 4px;
+  width: 60%;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+// === ПАГИНАЦИЯ ===
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-top: 60px;
+}
+
+.pagination-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: $vercel-medium-gray;
+  color: $vercel-text;
+  border: 1px solid $vercel-border;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  &:hover:not(:disabled) {
+    border-color: $vercel-accent;
+    color: $vercel-accent;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.pagination-info {
+  color: $vercel-muted;
+  font-size: 14px;
+}
+
+// === ПУСТОЕ СОСТОЯНИЕ ===
+.empty-state {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+  color: $vercel-muted;
+  
+  svg {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: $vercel-text;
+}
+
+.empty-description {
+  color: $vercel-muted;
+  margin-bottom: 32px;
+}
+
+.reset-filters-button {
+  padding: 12px 24px;
+  background: $vercel-accent;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: darken($vercel-accent, 10%);
+  }
+}
+
+// === МОДАЛЬНОЕ ОКНО ПРЕВЬЮ ===
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($vercel-black, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  @include vercel-blur;
+}
+
+.preview-modal {
+  background: $vercel-medium-gray;
+  border: 1px solid $vercel-border;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid $vercel-border;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: $vercel-text;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: $vercel-muted;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: $vercel-light-gray;
+    color: $vercel-text;
+  }
+}
+
+.modal-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  border: none;
+  background: white;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid $vercel-border;
+  justify-content: flex-end;
+}
+
+.modal-button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &.secondary {
+    background: $vercel-light-gray;
+    color: $vercel-text;
+    border: 1px solid $vercel-border;
+    
+    &:hover {
+      background: $vercel-border;
+    }
+  }
+  
+  &.primary {
+    background: $vercel-accent;
+    color: white;
+    
+    &:hover {
+      background: darken($vercel-accent, 10%);
+    }
+  }
+}
+
+// === АДАПТИВНОСТЬ ===
+@media (max-width: 768px) {
+  .templates-hero {
+    padding: 60px 0 40px;
+  }
+  
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  
+  .templates-filters {
+    padding: 24px 0;
+  }
+  
+  .templates-grid-section {
+    padding: 40px 0 60px;
+  }
+  
+  .template-card {
+    margin: 0;
+  }
+  
+  .modal-overlay {
+    padding: 10px;
+  }
+  
+  .preview-iframe {
+    min-height: 400px;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+    
+    .modal-button {
+      width: 100%;
+    }
+  }
+} 

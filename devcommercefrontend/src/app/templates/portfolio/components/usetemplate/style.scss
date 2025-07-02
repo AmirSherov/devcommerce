@@ -1,0 +1,437 @@
+// ===============================================
+// 🎨 USE TEMPLATE MODAL - ТЕМНЫЕ СТИЛИ
+// ===============================================
+
+.use-template-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.use-template-modal {
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+
+  // Header
+  .modal-header {
+    padding: 24px 24px 0 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 20px;
+
+    .header-content {
+      flex: 1;
+
+      .modal-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 8px 0;
+        line-height: 1.3;
+      }
+
+      .modal-subtitle {
+        font-size: 14px;
+        color: #a1a1aa;
+        margin: 0;
+        line-height: 1.4;
+
+        .template-name {
+          color: #3b82f6;
+          font-weight: 500;
+        }
+      }
+    }
+
+    .modal-close-button {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      margin-left: 16px;
+      flex-shrink: 0;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover {
+        background: #262626;
+        color: #ffffff;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  // Content
+  .modal-content {
+    padding: 24px;
+    max-height: calc(90vh - 160px);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #404040;
+      border-radius: 3px;
+
+      &:hover {
+        background: #525252;
+      }
+    }
+  }
+
+  // Template Preview Card
+  .template-preview-card {
+    background: #111111;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .preview-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      svg {
+        width: 24px;
+        height: 24px;
+        color: #ffffff;
+      }
+    }
+
+    .preview-info {
+      flex: 1;
+
+      h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+      }
+
+      p {
+        font-size: 14px;
+        color: #a1a1aa;
+        margin: 0 0 8px 0;
+      }
+
+      .template-stats {
+        display: flex;
+        gap: 16px;
+
+        span {
+          font-size: 12px;
+          color: #71717a;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+  }
+
+  // Form Fields
+  .form-fields {
+    .field-group {
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .field-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #ffffff;
+        margin-bottom: 8px;
+        line-height: 1.4;
+
+        .required {
+          color: #ef4444;
+          margin-left: 2px;
+        }
+      }
+
+      .field-input,
+      .field-textarea {
+        width: 100%;
+        background: #111111;
+        border: 1px solid #262626;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: #ffffff;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        resize: none;
+
+        &::placeholder {
+          color: #71717a;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        &.error {
+          border-color: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .field-textarea {
+        min-height: 100px;
+        line-height: 1.5;
+      }
+
+      .field-error {
+        display: block;
+        font-size: 12px;
+        color: #ef4444;
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+
+      .field-hint {
+        display: block;
+        font-size: 12px;
+        color: #71717a;
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  // Footer
+  .modal-footer {
+    padding: 0 24px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #1a1a1a;
+    padding-top: 20px;
+
+    .modal-button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 120px;
+      border: none;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      &.secondary {
+        background: transparent;
+        color: #a1a1aa;
+        border: 1px solid #262626;
+
+        &:hover:not(:disabled) {
+          background: #1a1a1a;
+          color: #ffffff;
+          border-color: #404040;
+        }
+      }
+
+      &.primary {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: #ffffff;
+        border: 1px solid #3b82f6;
+
+        &:hover:not(:disabled) {
+          background: linear-gradient(135deg, #2563eb, #1e40af);
+          transform: translateY(-1px);
+          box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .button-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+}
+
+// ===============================================
+// 📱 АДАПТИВНОСТЬ
+// ===============================================
+
+@media (max-width: 768px) {
+  .use-template-modal-overlay {
+    padding: 16px;
+  }
+
+  .use-template-modal {
+    max-height: 95vh;
+
+    .modal-header {
+      padding: 20px 20px 0 20px;
+      padding-bottom: 16px;
+
+      .header-content {
+        .modal-title {
+          font-size: 20px;
+        }
+
+        .modal-subtitle {
+          font-size: 13px;
+        }
+      }
+    }
+
+    .modal-content {
+      padding: 20px;
+    }
+
+    .template-preview-card {
+      padding: 12px;
+      gap: 12px;
+
+      .preview-icon {
+        width: 40px;
+        height: 40px;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .preview-info {
+        h4 {
+          font-size: 14px;
+        }
+
+        p {
+          font-size: 12px;
+        }
+
+        .template-stats {
+          gap: 12px;
+
+          span {
+            font-size: 11px;
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: 0 20px 20px 20px;
+      padding-top: 16px;
+      flex-direction: column;
+
+      .modal-button {
+        width: 100%;
+        min-width: auto;
+      }
+    }
+  }
+}
+
+// ===============================================
+// 🎬 АНИМАЦИИ
+// ===============================================
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+} 

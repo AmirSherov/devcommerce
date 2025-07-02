@@ -1,0 +1,59 @@
+/* Стили для сайдбара */
+
+/* Общие стили для иконок в сайдбаре */
+.sidebar-link svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+/* Стили для мобильного сайдбара */
+.mobile-sidebar svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 1.5;
+}
+
+/* Убираем стандартные стили ссылок */
+.sidebar-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.sidebar-link:hover {
+  text-decoration: none;
+}
+
+/* Стили для активного состояния */
+.sidebar-link.active {
+  background-color: rgba(55, 65, 81, 1);
+  color: white;
+}
+
+/* Анимации для hover эффектов */
+.sidebar-link:hover {
+  background-color: rgba(55, 65, 81, 0.8);
+  color: white;
+}
+
+/* Стили для иконок в свернутом состоянии */
+.sidebar-collapsed .sidebar-link {
+  justify-content: center;
+}
+
+/* Обеспечиваем единообразие размеров иконок */
+.sidebar-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.sidebar-icon-wrapper svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.5;
+} 

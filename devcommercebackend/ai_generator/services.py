@@ -21,29 +21,26 @@ class AIGenerationService:
     """Сервис для генерации портфолио через AI"""
     
     def __init__(self):
-        self.api_key = settings.DEEPSEEK_API_KEY
-        self.base_url = settings.DEEPSEEK_API_URL
-        self.model = settings.DEEPSEEK_MODEL
+        self.api_key = settings.OPENAI_API_KEY
+        self.model = settings.OPENAI_MODEL
         self.timeout = getattr(settings, 'AI_GENERATION_TIMEOUT', 30)
         self.max_retries = 1
-        if self.api_key:
+        if self.api_key and self.api_key != 'your-openai-api-key-here':
             try:
-                print(f"[DEBUG] Инициализация DeepSeek клиента")
+                print(f"[DEBUG] Инициализация OpenAI ChatGPT клиента")
                 print(f"[DEBUG] API Key: {self.api_key[:10]}...{self.api_key[-4:] if len(self.api_key) > 10 else '***'}")
-                print(f"[DEBUG] Base URL: {self.base_url}")
                 print(f"[DEBUG] Model: {self.model}")
                 
                 self.client = OpenAI(
-                    api_key=self.api_key,
-                    base_url=self.base_url
+                    api_key=self.api_key
                 )
-                print(f"[DEBUG] DeepSeek клиент успешно инициализирован")
+                print(f"[DEBUG] OpenAI ChatGPT клиент успешно инициализирован")
             except Exception as e:
-                print(f"[DEBUG] Ошибка инициализации DeepSeek клиента: {str(e)}")
+                print(f"[DEBUG] Ошибка инициализации OpenAI ChatGPT клиента: {str(e)}")
                 self.client = None
         else:
             self.client = None
-            print(f"[DEBUG] DeepSeek клиент НЕ инициализирован - нет API ключа")
+            print(f"[DEBUG] OpenAI ChatGPT клиент НЕ инициализирован - нет API ключа")
     
     def check_user_limits(self, user: User) -> Tuple[bool, str]:
         """Проверка лимитов пользователя"""
@@ -66,77 +63,143 @@ class AIGenerationService:
         return True, "OK"
     
     def build_ai_prompt(self, user_prompt: str, style: str = "modern") -> str:
-        """Создание структурированного промпта для DeepSeek"""
+        """Создание структурированного промпта для OpenAI ChatGPT"""
         
         style_descriptions = {
-            'modern': 'современный дизайн с чистыми линиями, градиентами и анимациями',
-            'minimal': 'минималистичный дизайн с большим количеством белого пространства',
-            'creative': 'креативный и яркий дизайн с необычными элементами',
-            'business': 'строгий бизнес стиль с профессиональными цветами',
-            'dark': 'темная тема с контрастными элементами',
-            'colorful': 'яркий и красочный дизайн с насыщенными цветами'
+            'modern': 'СОВРЕМЕННЫЙ ДИЗАЙН: CSS Grid, градиенты, анимации, glassmorphism, современная типографика',
+            'minimal': 'МИНИМАЛИСТИЧНЫЙ ДИЗАЙН: чистые линии, много белого пространства, акцент на контент',
+            'creative': 'КРЕАТИВНЫЙ ДИЗАЙН: яркие цвета, необычные формы, CSS animations, интерактивность',
+            'business': 'БИЗНЕС ДИЗАЙН: строгий, профессиональный, корпоративные цвета, четкая структура',
+            'dark': 'ТЕМНАЯ ТЕМА: темный фон, контрастные элементы, неоновые акценты, современность',
+            'colorful': 'ЯРКИЙ ДИЗАЙН: насыщенные цвета, градиенты, динамические элементы'
         }
         
         style_desc = style_descriptions.get(style, 'современный дизайн')
         
-        return f"""Ты - эксперт веб-разработчик. Создай полноценный сайт по описанию пользователя.
+        return f"""Ты - SENIOR FRONTEND РАЗРАБОТЧИК уровня Google/Apple. Создай ПОТРЯСАЮЩЕЕ портфолио.
+
+🎯 ЗАДАЧА: Создать СОВРЕМЕННЫЙ сайт уровня Dribbble/Awwwards 2024!
 
 СТИЛЬ: {style_desc}
-ПРОМПТ ПОЛЬЗОВАТЕЛЯ: {user_prompt}
+ПРОМПТ: {user_prompt}
 
-ТРЕБОВАНИЯ:
-- Верни ТОЛЬКО валидный JSON без markdown блока
-- HTML: чистая семантичная разметка с изображениями
-- CSS: адаптивный дизайн с медиа-запросами
-- JS: базовая интерактивность
-- Код должен быть компактным но функциональный
-- Всегда создавай сайт адаптивным и большим, красивым
-- Должен соответствовать требованиям пользователя и превосходить ожидания
+🔥 ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ 2024:
+✅ HTML5 semantic markup
+✅ CSS Grid + Flexbox layout  
+✅ CSS Variables для цветов
+✅ Modern gradients и shadows
+✅ Smooth transitions (0.3s ease)
+✅ Hover эффекты (transform: scale, opacity)
+✅ Mobile-first responsive design
+✅ Google Fonts (Inter, Poppins)
+✅ Современная цветовая палитра
+✅ JavaScript интерактивность
+✅ Lazy loading для изображений
+✅ Smooth scrolling behavior
 
-ВАЖНО ДЛЯ ИЗОБРАЖЕНИЙ:
-- Используй img теги там, где нужны изображения
-- В src="" пиши специальный плейсхолдер в формате: "imageplace-KEYWORDS"
-- Где KEYWORDS - это ключевые слова для поиска изображения через запятую
-- Примеры:
-  * <img src="imageplace-food,burger,restaurant" alt="Бургер">
-  * <img src="imageplace-business,office,professional" alt="Офис">
-  * <img src="imageplace-technology,computer,modern" alt="Технологии">
-  * <img src="imageplace-people,team,meeting" alt="Команда">
-- НЕ используй background-image в CSS для основных изображений контента
-- Плейсхолдеры будут автоматически заменены на реальные изображения
+🎨 ЦВЕТОВАЯ ПАЛИТРА:
+- Primary: #667eea (синий)
+- Secondary: #764ba2 (фиолетовый)  
+- Accent: #00d4aa (зеленый)
+- Warning: #f093fb (розовый)
+- Dark: #1a1a2e (темный)
+- Light: #f8f9fa (светлый)
+- Gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 
-ОТВЕЧАЙ СТРОГО В ФОРМАТЕ:
-{{"html": "полный HTML код", "css": "полный CSS код", "js": "полный JS код"}}
-БЕЗ MARKDOWN БЛОКА!"""
+🚀 СТРУКТУРА ПОРТФОЛИО:
+1. HERO - Мощный первый экран с анимацией
+2. ABOUT - О себе с фото (imageplace-userlogo)
+3. SKILLS - Красивая визуализация навыков
+4. PROJECTS - Showcase проектов с hover эффектами
+5. CONTACT - Стильная контактная форма
 
-    def call_deepseek_api(self, prompt: str) -> Dict[str, Any]:
-        """Вызов DeepSeek API через OpenAI клиент"""
+⚡ ОБЯЗАТЕЛЬНЫЕ ФИЧИ:
+- Плавная прокрутка между секциями
+- Typing animation для заголовков
+- Parallax эффекты
+- Loading animations
+- Form validation
+- Dark/Light theme toggle
+- Progress bars для навыков
+- Cards с hover эффектами
+- Responsive navbar
+- Footer с социальными ссылками
+
+🖼️ ИЗОБРАЖЕНИЯ:
+- Фото профиля: <img src="imageplace-userlogo" alt="Profile">
+- Проекты: <img src="imageplace-project,portfolio,website" alt="Project">
+- Фоны: <img src="imageplace-technology,workspace,modern" alt="Background">
+
+📱 RESPONSIVE BREAKPOINTS:
+- Mobile: 320px-768px
+- Tablet: 768px-1024px
+- Desktop: 1024px+
+
+ОТВЕЧАЙ СТРОГО JSON БЕЗ MARKDOWN:
+{{"html": "ПОЛНЫЙ HTML КОД", "css": "ПОЛНЫЙ CSS КОД", "js": "ПОЛНЫЙ JS КОД"}}
+
+СОЗДАЙ ШЕДЕВР УРОВНЯ МИРОВЫХ СТАНДАРТОВ! 🚀"""
+
+    def call_openai_api(self, prompt: str) -> Dict[str, Any]:
+        """Вызов OpenAI ChatGPT API"""
         if not self.client:
-            raise ValueError("DEEPSEEK_API_KEY не настроен")
+            raise ValueError("OPENAI_API_KEY не настроен")
         
 
         
         try:
             response = self.client.chat.completions.create(
-                extra_body={},
                 model=self.model,
                 messages=[
                     {
                         "role": "system", 
-                        "content": "Ты профессиональный веб-разработчик. Отвечай ТОЛЬКО валидным JSON БЕЗ markdown блока (без ```json и ```). Начинай ответ сразу с { и заканчивай }."
+                        "content": """🔥 ТЫ - ЛЕГЕНДАРНЫЙ FRONTEND АРХИТЕКТОР ИЗ APPLE/GOOGLE/META! 
+
+🚨 КРИТИЧЕСКИ ВАЖНО! 
+- НЕ СОЗДАВАЙ ПРОСТЫЕ/СКУЧНЫЕ ДИЗАЙНЫ!
+- КАЖДЫЙ ЭЛЕМЕНТ ДОЛЖЕН БЫТЬ СТИЛЬНЫМ И СОВРЕМЕННЫМ!
+- ИСПОЛЬЗУЙ ВСЕ CSS ФИШКИ 2024 ГОДА!
+
+✅ ОБЯЗАТЕЛЬНО В КАЖДОМ САЙТЕ:
+- Темный градиентный фон
+- Glassmorphism карточки (backdrop-filter: blur)
+- CSS Grid и Flexbox везде
+- Анимации и transitions
+- Hover эффекты с transform
+- Прогресс бары для навыков
+- Красивые кнопки с градиентами
+- Современная типографика
+- Плавающие частицы
+- Typing анимация
+
+⚡ ФОРМАТ ОТВЕТА - ТОЛЬКО JSON:
+{"html": "<!DOCTYPE html>...", "css": "современные стили...", "js": "интерактивность..."}
+
+🚨 ПРАВИЛА:
+- БЕЗ markdown блоков (```json)!
+- БЕЗ комментариев в JSON!
+- Начинай с { и заканчивай }
+- НЕ ЛЕНИСЬ! Создавай ШЕДЕВРЫ!
+
+🎯 СЕКЦИЯ PROJECTS ОБЯЗАТЕЛЬНА:
+- Grid layout 2-3 колонки
+- Hover эффекты с overlay
+- Красивые изображения проектов
+- Live Demo кнопки
+
+СОЗДАВАЙ ДИЗАЙНЫ КОТОРЫЕ ВПЕЧАТЛЯЮТ! НЕ ПОДВЕДИ! 🚀"""
                     },
                     {
                         "role": "user", 
                         "content": prompt
                     }
                 ],
-                temperature=0.7,
-                max_tokens=8000,
-                stream=False
+                temperature=1.2,
+                max_tokens=2000
             )
             
             if not response or not hasattr(response, 'choices') or not response.choices:
-                raise ValueError("Пустой ответ от DeepSeek API")
+                raise ValueError("Пустой ответ от OpenAI API")
             
             content = response.choices[0].message.content
             result = {
@@ -152,10 +215,10 @@ class AIGenerationService:
             return result
             
         except Exception as e:
-            raise Exception(f"DeepSeek API error: {str(e)}")
+            raise Exception(f"OpenAI API error: {str(e)}")
     
     def parse_ai_response(self, api_response: Dict[str, Any]) -> Dict[str, str]:
-        """Парсинг ответа от DeepSeek API"""
+        """Парсинг ответа от OpenAI API с улучшенной обработкой"""
         try:
             if not api_response:
                 raise ValueError("api_response пустой")
@@ -165,6 +228,7 @@ class AIGenerationService:
                 
             if not api_response['choices']:
                 raise ValueError("Пустой массив choices в ответе API")
+            
             choice = api_response['choices'][0]
             if not choice or 'message' not in choice:
                 raise ValueError("Отсутствует message в choices[0]")
@@ -176,43 +240,105 @@ class AIGenerationService:
             content = message['content']
             if not content:
                 raise ValueError("Пустой контент в ответе API")
-            if '```json' in content:
-                start_idx = content.find('```json') + 7
-                end_idx = content.find('```', start_idx)
-                if end_idx == -1:
-                    json_content = content[start_idx:].strip()
-                    last_brace = json_content.rfind('}')
-                    if last_brace != -1:
-                        json_content = json_content[:last_brace + 1]
-                else:
-                    json_content = content[start_idx:end_idx].strip()
-            else:
+            
+            logger.info(f"🔍 [PARSE] Исходный ответ длиной: {len(content)} символов")
+            
+            # 🔧 УЛУЧШЕННОЕ ИЗВЛЕЧЕНИЕ JSON
+            json_content = None
+            
+            # 1. Попытка найти JSON в markdown блоке ```json
+            if '```json' in content.lower():
+                start_markers = ['```json', '```JSON']
+                for marker in start_markers:
+                    if marker in content:
+                        start_idx = content.find(marker) + len(marker)
+                        end_idx = content.find('```', start_idx)
+                        if end_idx == -1:
+                            json_content = content[start_idx:].strip()
+                        else:
+                            json_content = content[start_idx:end_idx].strip()
+                        break
+                        
+            # 2. Попытка найти JSON в блоке ```
+            elif '```' in content and json_content is None:
+                lines = content.split('\n')
+                inside_block = False
+                json_lines = []
+                
+                for line in lines:
+                    if line.strip() == '```' and not inside_block:
+                        inside_block = True
+                        continue
+                    elif line.strip() == '```' and inside_block:
+                        break
+                    elif inside_block:
+                        json_lines.append(line)
+                
+                if json_lines:
+                    json_content = '\n'.join(json_lines).strip()
+            
+            # 3. Поиск JSON по фигурным скобкам
+            if json_content is None:
                 start_idx = content.find('{')
                 end_idx = content.rfind('}') + 1
-                if start_idx == -1 or end_idx == 0:
-                    raise ValueError("JSON не найден в ответе AI")
-                json_content = content[start_idx:end_idx]
+                if start_idx != -1 and end_idx > start_idx:
+                    json_content = content[start_idx:end_idx]
             
+            if json_content is None:
+                raise ValueError("JSON не найден в ответе AI")
+            
+            logger.info(f"📋 [PARSE] Извлеченный JSON длиной: {len(json_content)} символов")
+            
+            # 🛠️ ПАРСИНГ JSON С ВОССТАНОВЛЕНИЕМ
             try:
                 code_data = json.loads(json_content)
             except json.JSONDecodeError as e:
-                raise ValueError(f"Ошибка парсинга JSON: {str(e)}")
+                logger.warning(f"⚠️ [PARSE] Ошибка JSON, пытаемся исправить: {str(e)}")
+                
+                # Попытка исправить распространенные ошибки JSON
+                json_content = json_content.replace('\n', '\\n')  # Экранируем переносы строк
+                json_content = json_content.replace('\t', '\\t')  # Экранируем табы
+                json_content = json_content.replace('\r', '\\r')  # Экранируем возвраты каретки
+                
+                # Удаляем комментарии вида // и /* */
+                import re
+                json_content = re.sub(r'//.*?$', '', json_content, flags=re.MULTILINE)
+                json_content = re.sub(r'/\*.*?\*/', '', json_content, flags=re.DOTALL)
+                
+                try:
+                    code_data = json.loads(json_content)
+                    logger.info("✅ [PARSE] JSON успешно исправлен и распарсен")
+                except json.JSONDecodeError as e2:
+                    raise ValueError(f"Критическая ошибка парсинга JSON: {str(e2)}")
             
+            # 🔍 ВАЛИДАЦИЯ СТРУКТУРЫ
             if not isinstance(code_data, dict):
                 raise ValueError(f"JSON должен быть объектом, получен {type(code_data)}")
+            
             required_fields = ['html', 'css', 'js']
             for field in required_fields:
                 if field not in code_data:
                     raise ValueError(f"Отсутствует обязательное поле: {field}")
-            html_content = code_data['html']
-            if not html_content.strip().startswith('<!DOCTYPE html>'):
-                raise ValueError("HTML должен начинаться с <!DOCTYPE html>")
             
-            return {
-                'html': html_content.strip(),
+            # 🛠️ ИСПРАВЛЕНИЕ HTML БЕЗ DOCTYPE
+            html_content = code_data['html'].strip()
+            if not html_content.startswith('<!DOCTYPE') and not html_content.startswith('<html'):
+                # Если HTML не начинается с DOCTYPE или <html>, добавляем базовую структуру
+                if '<html' not in html_content:
+                    html_content = f'<!DOCTYPE html>\n<html lang="ru">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Portfolio</title>\n</head>\n<body>\n{html_content}\n</body>\n</html>'
+                else:
+                    html_content = f'<!DOCTYPE html>\n{html_content}'
+                    
+                logger.info("🔧 [FIX] Добавлена базовая HTML структура")
+            
+            result = {
+                'html': html_content,
                 'css': code_data['css'].strip(),
                 'js': code_data['js'].strip()
             }
+            
+            logger.info("✅ [PARSE] Ответ успешно распарсен")
+            return result
             
         except json.JSONDecodeError as e:
             raise ValueError(f"Ошибка парсинга JSON: {str(e)}")
@@ -445,7 +571,7 @@ class AIGenerationService:
                 request_data.get('style', 'modern')
             )
             try:
-                api_response = self.call_deepseek_api(full_prompt)
+                api_response = self.call_openai_api(full_prompt)
                 if not api_response:
                     raise ValueError("API вернул None")
                 ai_request.ai_raw_response = json.dumps(api_response, ensure_ascii=False)
@@ -518,7 +644,4 @@ class AIGenerationService:
             }
 
 
-def sync_generate_portfolio(request_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Синхронная генерация портфолио"""
-    service = AIGenerationService()
-    return service.generate_portfolio(request_data) 
+# Удалена функция sync_generate_portfolio - используйте SmartAIGenerator.generate_portfolio_optimized 

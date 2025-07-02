@@ -4,6 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Loader from '../../../components/simple-loader';
+import DashboardLayout from '../../../components/ui/dashboard-layout';
 import ProfileHeader from './components/ProfileHeader';
 import OverviewTab from './components/OverviewTab';
 import ProjectsTab from './components/ProjectsTab';
@@ -54,33 +55,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Top Navigation */}
-      <nav className="bg-black border-b border-gray-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="group flex items-center space-x-3 text-gray-400 hover:text-white transition-all duration-300 px-4 py-2 rounded-lg hover:bg-gray-800/50"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center group-hover:bg-gray-700 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="font-medium">Назад к дашборду</span>
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
-            <h1 className="text-xl font-bold text-white">
-              Профиль пользователя
-            </h1>
-          </div>
-          
-          <div className="w-32"></div>
-        </div>
-      </nav>
-
+    <DashboardLayout activePage="profile">
       {/* Profile Header with Tabs */}
       <ProfileHeader 
         activeTab={activeTab} 
@@ -88,9 +63,9 @@ export default function ProfilePage() {
       />
 
       {/* Tab Content */}
-      <div className="bg-black min-h-screen">
+      <div className="mt-6">
         {renderTabContent()}
       </div>
-    </div>
+    </DashboardLayout>
   );
 } 
