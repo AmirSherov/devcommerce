@@ -1,17 +1,39 @@
 from django.urls import path
-from . import views
+from .views import (
+    TemplateAIGenerateView,
+    GetUserAILimitsView,
+    TemplateAIStatsView,
+    TemplateAIHistoryView,
+    track_regular_template_usage
+)
 
 app_name = 'ai_generator'
 
 urlpatterns = [
-    # Единственный endpoint для AI генерации
-    path('smart-generate/', views.SmartAIGenerationView.as_view(), name='smart_generate'),
+    # 🤖 AI ENDPOINTS ДЛЯ ЗАПОЛНЕНИЯ ШАБЛОНОВ
     
-    # История и статистика
-    path('history/', views.AIGenerationHistoryView.as_view(), name='history'),
-    path('limits/', views.GetUserLimitsView.as_view(), name='user_limits'),
-    path('stats/', views.AIStatsView.as_view(), name='ai_stats'),
+    # AI заполнение конкретного шаблона
+    path('templates/<int:template_id>/generate/', 
+         TemplateAIGenerateView.as_view(), 
+         name='ai_generate_template'),
     
-    # Шаблоны промптов
-    path('templates/', views.PromptTemplatesView.as_view(), name='prompt_templates'),
+    # Информация о лимитах AI генераций
+    path('limits/', 
+         GetUserAILimitsView.as_view(), 
+         name='ai_limits'),
+    
+    # Статистика AI использования
+    path('stats/', 
+         TemplateAIStatsView.as_view(), 
+         name='ai_stats'),
+    
+    # История AI генераций
+    path('history/', 
+         TemplateAIHistoryView.as_view(), 
+         name='ai_history'),
+    
+    # Учет обычного использования шаблонов
+    path('track-regular-usage/', 
+         track_regular_template_usage, 
+         name='track_regular_usage'),
 ] 

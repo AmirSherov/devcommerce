@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { templatesAPI, TEMPLATE_DIFFICULTIES, TEMPLATE_SORT_OPTIONS, getTemplateErrorMessage } from '../../../api/templates/api';
+import { aiAPI, getAIErrorMessage } from '../../../api/ai/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import UseTemplateModal from './components/usetemplate/usetemplate';
+import AIGenerateModal from './components/ai-generate/ai-generate-modal';
 import DashboardLayout from '../../../components/ui/dashboard-layout';
 import { 
   HiOutlineEye, 
@@ -28,7 +30,8 @@ import {
   HiOutlinePresentationChartLine,
   HiOutlineUsers,
   HiOutlinePencil,
-  HiOutlineBriefcase
+  HiOutlineBriefcase,
+  HiOutlineSparkles
 } from "react-icons/hi";
 import './style.scss';
 interface Template {
@@ -82,7 +85,9 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showUseTemplateModal, setShowUseTemplateModal] = useState(false);
+  const [showAIGenerateModal, setShowAIGenerateModal] = useState(false);
   const [isUsingTemplate, setIsUsingTemplate] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   useEffect(() => {
     loadTemplates();
   }, [filters, pagination.page]);
@@ -217,6 +222,36 @@ export default function TemplatesPage() {
   const handleCloseUseTemplateModal = () => {
     if (!isUsingTemplate) {
       setShowUseTemplateModal(false);
+      setSelectedTemplate(null);
+    }
+  };
+
+  const handleAIGenerate = (template: Template) => {
+    if (!user) {
+      router.push('/auth');
+      return;
+    }
+
+    setSelectedTemplate(template);
+    setShowAIGenerateModal(true);
+  };
+
+  const handleAIGenerateSuccess = async (result: any) => {
+    try {
+      if (result.portfolio_slug) {
+        // Переходим к созданному портфолио
+        const editUrl = `/portfolio/edit/${result.portfolio_slug}`;
+        router.push(editUrl);
+      }
+    } catch (error: any) {
+      console.error('Ошибка после AI генерации:', error);
+      setError('Портфолио создано, но произошла ошибка при переходе');
+    }
+  };
+
+  const handleCloseAIGenerateModal = () => {
+    if (!isGeneratingAI) {
+      setShowAIGenerateModal(false);
       setSelectedTemplate(null);
     }
   };
@@ -494,29 +529,49 @@ export default function TemplatesPage() {
                         </div>
                       )}
 
-                      {/* Action Button */}
-                      <button
-                        onClick={() => handleUseTemplate(template)}
-                        disabled={isUsingTemplate}
-                        className="use-template-button"
-                      >
-                        {isUsingTemplate ? (
-                          <>
-                            <div className="button-spinner"></div>
-                            Создаем...
-                          </>
-                        ) : (
-                          <>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                              <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
-                              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
-                              <path d="M2 2l7.586 7.586"></path>
-                              <circle cx="11" cy="11" r="2"></circle>
-                            </svg>
-                            Использовать шаблон
-                          </>
-                        )}
-                      </button>
+                      {/* Action Buttons */}
+                      <div className="template-actions">
+                        <button
+                          onClick={() => handleUseTemplate(template)}
+                          disabled={isUsingTemplate || isGeneratingAI}
+                          className="use-template-button secondary"
+                        >
+                          {isUsingTemplate ? (
+                            <>
+                              <div className="button-spinner"></div>
+                              Создаем...
+                            </>
+                          ) : (
+                            <>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                                <path d="M2 2l7.586 7.586"></path>
+                                <circle cx="11" cy="11" r="2"></circle>
+                              </svg>
+                              Использовать
+                            </>
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleAIGenerate(template)}
+                          disabled={isUsingTemplate || isGeneratingAI}
+                          className="ai-generate-button primary"
+                        >
+                          {isGeneratingAI ? (
+                            <>
+                              <div className="button-spinner"></div>
+                              AI генерирует...
+                            </>
+                          ) : (
+                            <>
+                              <HiOutlineSparkles />
+                              AI заполнение
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -629,6 +684,15 @@ export default function TemplatesPage() {
         template={selectedTemplate}
         onConfirm={handleConfirmUseTemplate}
         isLoading={isUsingTemplate}
+      />
+
+      {/* AI Generate Modal */}
+      <AIGenerateModal
+        isOpen={showAIGenerateModal}
+        onClose={handleCloseAIGenerateModal}
+        template={selectedTemplate}
+        onSuccess={handleAIGenerateSuccess}
+        isLoading={isGeneratingAI}
       />
       </div>
     </DashboardLayout>

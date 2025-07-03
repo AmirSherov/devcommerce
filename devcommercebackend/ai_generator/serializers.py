@@ -1,383 +1,274 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import AIGenerationRequest, AIGenerationStats, AIPromptTemplate
+from .models import (
+    TemplateAIGeneration, 
+    TemplateAIStats, 
+    GlobalTemplateAIStats
+)
 
 User = get_user_model()
 
 
-class AIGenerateRequestSerializer(serializers.Serializer):
-    """Serializer для запроса AI генерации"""
+class TemplateAIGenerationRequestSerializer(serializers.Serializer):
+    """
+    🤖 СЕРИАЛИЗАТОР ДЛЯ ЗАПРОСА AI ЗАПОЛНЕНИЯ ШАБЛОНА
     
-    title = serializers.CharField(
+    Принимает данные пользователя для персонализации HTML шаблона
+    """
+    
+    project_title = serializers.CharField(
         max_length=200,
         help_text="Название проекта",
         error_messages={
-            'max_length': 'Название проекта не должно превышать 200 символов',
             'required': 'Название проекта обязательно',
-            'blank': 'Название проекта не может быть пустым'
+            'blank': 'Название проекта не может быть пустым',
+            'max_length': 'Название проекта не должно превышать 200 символов'
         }
     )
     
-    description = serializers.CharField(
+    project_description = serializers.CharField(
         max_length=1000,
-        required=False,
-        allow_blank=True,
-        help_text="Описание проекта (необязательно)",
+        help_text="Описание проекта",
         error_messages={
-            'max_length': 'Описание не должно превышать 1000 символов'
+            'required': 'Описание проекта обязательно',
+            'blank': 'Описание проекта не может быть пустым',
+            'max_length': 'Описание проекта не должно превышать 1000 символов'
         }
     )
     
-    prompt = serializers.CharField(
-        max_length=500,
-        help_text="Промпт для AI генерации",
+    user_data = serializers.CharField(
+        help_text="Данные пользователя для AI заполнения (свободный формат: навыки, опыт, образование, контакты)",
         error_messages={
-            'max_length': 'Промпт не должен превышать 500 символов',
-            'required': 'Промпт для AI обязателен',
-            'blank': 'Промпт не может быть пустым'
+            'required': 'Данные пользователя обязательны',
+            'blank': 'Данные пользователя не могут быть пустыми'
         }
     )
     
-    style = serializers.ChoiceField(
-        choices=AIGenerationRequest.STYLE_CHOICES,
-        default='modern',
-        help_text="Стиль дизайна",
-        error_messages={
-            'invalid_choice': 'Выберите корректный стиль дизайна'
-        }
-    )
-    
-    tags = serializers.ListField(
-        child=serializers.CharField(max_length=50),
-        required=False,
-        default=list,
-        max_length=10,
-        help_text="Теги проекта (максимум 10)",
-        error_messages={
-            'max_length': 'Максимум 10 тегов'
-        }
-    )
-    
-    def validate_title(self, value):
+    def validate_project_title(self, value):
         """Валидация названия проекта"""
-        if len(value.strip()) < 3:
+        cleaned_title = value.strip()
+        if len(cleaned_title) < 3:
             raise serializers.ValidationError(
                 "Название проекта должно содержать минимум 3 символа"
             )
-        return value.strip()
-    
-    def validate_prompt(self, value):
-        """Валидация промпта"""
-        prompt = value.strip()
-        if len(prompt) < 10:
+        if len(cleaned_title) > 200:
             raise serializers.ValidationError(
-                "Промпт должен содержать минимум 10 символов"
+                "Название проекта не должно превышать 200 символов"
             )
-        
-        # Проверяем на спам/мусор
-        spam_words = ['test', 'тест', 'asdf', '123']
-        if prompt.lower() in spam_words:
-            raise serializers.ValidationError(
-                "Пожалуйста, введите более содержательный промпт"
-            )
-        
-        return prompt
+        return cleaned_title
     
-    def validate_tags(self, value):
-        """Валидация тегов"""
-        if value:
-            # Очищаем и фильтруем теги
-            clean_tags = []
-            for tag in value:
-                clean_tag = tag.strip().lower()
-                if clean_tag and len(clean_tag) >= 2 and clean_tag not in clean_tags:
-                    clean_tags.append(clean_tag)
-            
-            return clean_tags[:10]  # Максимум 10 тегов
-        return []
+    def validate_project_description(self, value):
+        """Валидация описания проекта"""
+        cleaned_description = value.strip()
+        if len(cleaned_description) < 10:
+            raise serializers.ValidationError(
+                "Описание проекта должно содержать минимум 10 символов"
+            )
+        if len(cleaned_description) > 1000:
+            raise serializers.ValidationError(
+                "Описание проекта не должно превышать 1000 символов"
+            )
+        return cleaned_description
+    
+    def validate_user_data(self, value):
+        """Валидация пользовательских данных"""
+        cleaned_data = value.strip()
+        if len(cleaned_data) < 20:
+            raise serializers.ValidationError(
+                "Данные пользователя слишком короткие (минимум 20 символов)"
+            )
+        if len(cleaned_data) > 5000:
+            raise serializers.ValidationError(
+                "Данные пользователя слишком длинные (максимум 5000 символов)"
+            )
+        return cleaned_data
 
 
-class AIGenerateResponseSerializer(serializers.Serializer):
-    """Serializer для ответа AI генерации"""
+class TemplateAIGenerationSerializer(serializers.ModelSerializer):
+    """
+    📊 СЕРИАЛИЗАТОР ДЛЯ МОДЕЛИ AI ГЕНЕРАЦИИ ШАБЛОНА
+    
+    Используется для отображения истории генераций пользователя
+    """
+    
+    template_title = serializers.CharField(source='template.title', read_only=True)
+    template_category = serializers.CharField(source='template.category', read_only=True)
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    portfolio_slug = serializers.CharField(source='portfolio_created.slug', read_only=True)
+    portfolio_title = serializers.CharField(source='portfolio_created.title', read_only=True)
+    duration = serializers.ReadOnlyField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = TemplateAIGeneration
+        fields = [
+            'id', 'user_username', 'template_title', 'template_category',
+            'project_title', 'project_description', 'user_data',
+            'status', 'status_display', 'portfolio_slug', 'portfolio_title',
+            'response_time', 'tokens_used', 'error_message', 'duration',
+            'created_at', 'started_at', 'completed_at'
+        ]
+        read_only_fields = [
+            'id', 'user_username', 'template_title', 'template_category',
+            'portfolio_slug', 'portfolio_title', 'duration', 'status_display',
+            'created_at', 'started_at', 'completed_at'
+        ]
+
+
+class TemplateAIStatsSerializer(serializers.ModelSerializer):
+    """
+    📈 СЕРИАЛИЗАТОР ДЛЯ СТАТИСТИКИ AI ГЕНЕРАЦИЙ ПОЛЬЗОВАТЕЛЯ
+    
+    Показывает ежедневную статистику использования AI и обычных шаблонов
+    """
+    
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    ai_success_rate = serializers.ReadOnlyField()
+    total_usage = serializers.ReadOnlyField()
+    ai_success_rate_display = serializers.SerializerMethodField()
+    total_ai_response_time_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = TemplateAIStats
+        fields = [
+            'id', 'user_username', 'date',
+            'ai_requests_count', 'ai_successful_count', 'ai_failed_count',
+            'regular_usage_count', 'total_ai_response_time', 'total_tokens_used',
+            'popular_templates', 'ai_success_rate', 'ai_success_rate_display',
+            'total_usage', 'total_ai_response_time_display',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'user_username', 'ai_success_rate', 'total_usage',
+            'ai_success_rate_display', 'total_ai_response_time_display',
+            'created_at', 'updated_at'
+        ]
+    
+    def get_ai_success_rate_display(self, obj):
+        """Форматированный success rate"""
+        return f"{obj.ai_success_rate:.1f}%"
+    
+    def get_total_ai_response_time_display(self, obj):
+        """Форматированное время ответа"""
+        if obj.total_ai_response_time:
+            return f"{obj.total_ai_response_time:.2f}s"
+        return "0.00s"
+
+
+class GlobalTemplateAIStatsSerializer(serializers.ModelSerializer):
+    """
+    🌍 СЕРИАЛИЗАТОР ДЛЯ ГЛОБАЛЬНОЙ СТАТИСТИКИ AI
+    
+    Показывает общую статистику платформы по использованию AI
+    """
+    
+    ai_vs_regular_ratio = serializers.ReadOnlyField()
+    ai_success_rate = serializers.SerializerMethodField()
+    average_ai_response_time_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = GlobalTemplateAIStats
+        fields = [
+            'id', 'date',
+            'total_ai_requests', 'total_ai_successful', 'total_ai_failed',
+            'total_regular_usage', 'active_ai_users', 'premium_users_count',
+            'average_ai_response_time', 'total_tokens_consumed',
+            'popular_templates_ai', 'popular_templates_regular',
+            'error_distribution', 'ai_vs_regular_ratio',
+            'ai_success_rate', 'average_ai_response_time_display',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'ai_vs_regular_ratio', 'ai_success_rate',
+            'average_ai_response_time_display', 'created_at', 'updated_at'
+        ]
+    
+    def get_ai_success_rate(self, obj):
+        """Вычисляем success rate"""
+        if obj.total_ai_requests > 0:
+            return round((obj.total_ai_successful / obj.total_ai_requests) * 100, 1)
+        return 0.0
+    
+    def get_average_ai_response_time_display(self, obj):
+        """Форматированное среднее время ответа"""
+        if obj.average_ai_response_time:
+            return f"{obj.average_ai_response_time:.2f}s"
+        return "0.00s"
+
+
+class TemplateAILimitsSerializer(serializers.Serializer):
+    """
+    🔒 СЕРИАЛИЗАТОР ДЛЯ ЛИМИТОВ AI ГЕНЕРАЦИЙ
+    
+    Показывает информацию о лимитах пользователя
+    """
+    
+    is_premium = serializers.BooleanField(read_only=True)
+    daily_limit = serializers.IntegerField(read_only=True)
+    used_today = serializers.IntegerField(read_only=True)
+    remaining_today = serializers.IntegerField(read_only=True)
+    next_reset = serializers.DateTimeField(read_only=True)
+    can_generate = serializers.BooleanField(read_only=True)
+    limit_message = serializers.CharField(read_only=True)
+    regular_usage_today = serializers.IntegerField(read_only=True)
+    total_usage_today = serializers.IntegerField(read_only=True)
+
+
+class RegularUsageRequestSerializer(serializers.Serializer):
+    """
+    📝 СЕРИАЛИЗАТОР ДЛЯ УЧЕТА ОБЫЧНОГО ИСПОЛЬЗОВАНИЯ ШАБЛОНОВ
+    
+    Используется для отслеживания использования шаблонов без AI
+    """
+    
+    template_id = serializers.IntegerField(
+        help_text="ID шаблона, который был использован",
+        error_messages={
+            'required': 'ID шаблона обязателен',
+            'invalid': 'ID шаблона должен быть числом'
+        }
+    )
+    
+    def validate_template_id(self, value):
+        """Валидация ID шаблона"""
+        if value <= 0:
+            raise serializers.ValidationError(
+                "ID шаблона должен быть положительным числом"
+            )
+        return value
+
+
+class TemplateAIGenerationResponseSerializer(serializers.Serializer):
+    """
+    ✅ СЕРИАЛИЗАТОР ДЛЯ ОТВЕТА AI ГЕНЕРАЦИИ
+    
+    Возвращает результат генерации AI портфолио
+    """
     
     success = serializers.BooleanField()
-    portfolio = serializers.SerializerMethodField()
-    request_id = serializers.IntegerField(required=False)
+    portfolio_slug = serializers.CharField(required=False)
+    portfolio_url = serializers.CharField(required=False)
+    generation_id = serializers.IntegerField(required=False)
     response_time = serializers.FloatField(required=False)
+    tokens_used = serializers.IntegerField(required=False)
     error = serializers.CharField(required=False)
     error_code = serializers.CharField(required=False)
-    
-    def get_portfolio(self, obj):
-        """Получение данных портфолио"""
-        if obj.get('success') and obj.get('portfolio'):
-            from portfolio.serializers import PortfolioDetailSerializer
-            return PortfolioDetailSerializer(obj['portfolio']).data
-        return None
+    message = serializers.CharField(required=False)
 
 
-class AIGenerationRequestListSerializer(serializers.ModelSerializer):
-    """Serializer для списка AI запросов пользователя"""
+class TemplateAIStatsOverviewSerializer(serializers.Serializer):
+    """
+    🎯 СЕРИАЛИЗАТОР ДЛЯ ОБЩЕГО ОБЗОРА СТАТИСТИКИ ПОЛЬЗОВАТЕЛЯ
     
-    user_username = serializers.CharField(source='user.username', read_only=True)
-    portfolio_title = serializers.CharField(source='portfolio_created.title', read_only=True)
-    duration_display = serializers.SerializerMethodField()
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    style_display = serializers.CharField(source='get_style_display', read_only=True)
+    Показывает краткую статистику использования AI
+    """
     
-    class Meta:
-        model = AIGenerationRequest
-        fields = [
-            'id', 'title', 'description', 'prompt', 'style', 'style_display',
-            'status', 'status_display', 'user_username', 'portfolio_title',
-            'response_time', 'duration_display', 'created_at', 'completed_at'
-        ]
-    
-    def get_duration_display(self, obj):
-        """Форматированное отображение длительности"""
-        duration = obj.duration
-        if duration:
-            return f"{duration:.2f}s"
-        return None
-
-
-class AIGenerationStatsSerializer(serializers.ModelSerializer):
-    """Serializer для статистики AI генераций пользователя"""
-    
-    success_rate_display = serializers.SerializerMethodField()
-    average_response_time_display = serializers.SerializerMethodField()
-    remaining_requests = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = AIGenerationStats
-        fields = [
-            'date', 'requests_count', 'successful_count', 'failed_count',
-            'success_rate_display', 'average_response_time_display',
-            'total_response_time', 'remaining_requests'
-        ]
-    
-    def get_success_rate_display(self, obj):
-        return f"{obj.success_rate}%"
-    
-    def get_average_response_time_display(self, obj):
-        return f"{obj.average_response_time}s"
-    
-    def get_remaining_requests(self, obj):
-        return max(0, 5 - obj.requests_count)
-
-
-class AIPromptTemplateSerializer(serializers.ModelSerializer):
-    """Serializer для шаблонов промптов"""
-    
-    user_username = serializers.CharField(source='user.username', read_only=True)
-    style_display = serializers.CharField(source='get_style_display', read_only=True)
-    category_display = serializers.CharField(source='get_category_display', read_only=True)
-    
-    class Meta:
-        model = AIPromptTemplate
-        fields = [
-            'id', 'name', 'prompt', 'category', 'category_display',
-            'style', 'style_display', 'usage_count', 'success_rate',
-            'is_public', 'is_featured', 'user_username', 'created_at'
-        ]
-        read_only_fields = ['usage_count', 'success_rate', 'user_username']
-    
-    def validate_name(self, value):
-        """Валидация названия шаблона"""
-        if len(value.strip()) < 3:
-            raise serializers.ValidationError(
-                "Название шаблона должно содержать минимум 3 символа"
-            )
-        return value.strip()
-    
-    def validate_prompt(self, value):
-        """Валидация промпта шаблона"""
-        prompt = value.strip()
-        if len(prompt) < 10:
-            raise serializers.ValidationError(
-                "Промпт должен содержать минимум 10 символов"
-            )
-        return prompt
-
-
-class AIUserStatsSerializer(serializers.Serializer):
-    """Serializer для общей статистики пользователя по AI"""
-    
-    total_requests = serializers.IntegerField()
-    total_successful = serializers.IntegerField()
-    total_failed = serializers.IntegerField()
+    total_ai_generations = serializers.IntegerField()
+    successful_generations = serializers.IntegerField()
+    failed_generations = serializers.IntegerField()
     success_rate = serializers.FloatField()
     average_response_time = serializers.FloatField()
-    total_portfolios_created = serializers.IntegerField()
-    favorite_style = serializers.CharField()
-    today_requests = serializers.IntegerField()
-    remaining_today = serializers.IntegerField()
-    most_used_prompts = serializers.ListField()
-
-
-class AILimitsSerializer(serializers.Serializer):
-    """Serializer для информации о лимитах пользователя"""
-    
-    is_premium = serializers.BooleanField()
-    daily_limit = serializers.IntegerField()
-    used_today = serializers.IntegerField()
-    remaining_today = serializers.IntegerField()
-    next_reset = serializers.DateTimeField()
-    can_generate = serializers.BooleanField()
-    limit_message = serializers.CharField()
-
-
-class AIStyleStatsSerializer(serializers.Serializer):
-    """Serializer для статистики по стилям"""
-    
-    style = serializers.CharField()
-    count = serializers.IntegerField()
-    success_rate = serializers.FloatField()
-    average_response_time = serializers.FloatField()
-
-
-class PersonalInfoSerializer(serializers.Serializer):
-    """Персональная информация"""
-    firstName = serializers.CharField(max_length=100, help_text="Имя")
-    lastName = serializers.CharField(max_length=100, help_text="Фамилия")
-    profession = serializers.CharField(max_length=200, help_text="Профессия/специализация")
-    bio = serializers.CharField(required=False, allow_blank=True, help_text="О себе")
-    location = serializers.CharField(required=False, allow_blank=True, help_text="Местоположение")
-
-class EducationSerializer(serializers.Serializer):
-    """Образование"""
-    university = serializers.CharField(max_length=300, help_text="Учебное заведение")
-    degree = serializers.CharField(required=False, allow_blank=True, help_text="Степень/квалификация")
-    field = serializers.CharField(max_length=200, help_text="Специальность")
-    graduationYear = serializers.CharField(required=False, allow_blank=True, help_text="Год окончания")
-    diplomaImage = serializers.ImageField(required=False, help_text="Фото диплома")
-
-class ExperienceSerializer(serializers.Serializer):
-    """Опыт работы"""
-    company = serializers.CharField(max_length=200, help_text="Компания")
-    position = serializers.CharField(max_length=200, help_text="Должность")
-    duration = serializers.CharField(max_length=100, help_text="Период работы")
-    description = serializers.CharField(required=False, allow_blank=True, help_text="Описание обязанностей")
-    achievements = serializers.ListField(
-        child=serializers.CharField(max_length=300),
-        required=False,
-        default=list,
-        help_text="Ключевые достижения"
-    )
-
-class SkillsSerializer(serializers.Serializer):
-    """Навыки"""
-    technical = serializers.ListField(
-        child=serializers.CharField(max_length=100),
-        required=False,
-        default=list,
-        help_text="Технические навыки"
-    )
-    tools = serializers.ListField(
-        child=serializers.CharField(max_length=100),
-        required=False,
-        default=list,
-        help_text="Инструменты и ПО"
-    )
-    languages = serializers.ListField(
-        child=serializers.CharField(max_length=100),
-        required=False,
-        default=list,
-        help_text="Языки программирования"
-    )
-    soft = serializers.ListField(
-        child=serializers.CharField(max_length=100),
-        required=False,
-        default=list,
-        help_text="Личные качества"
-    )
-
-class ProjectSerializer(serializers.Serializer):    
-    """Проект"""
-    name = serializers.CharField(max_length=200, help_text="Название проекта")
-    description = serializers.CharField(required=False, allow_blank=True, help_text="Описание проекта")
-    technologies = serializers.ListField(
-        child=serializers.CharField(max_length=100),
-        required=False,
-        default=list,
-        help_text="Используемые технологии"
-    )
-    link = serializers.URLField(required=False, allow_blank=True, help_text="Ссылка на проект")
-
-class ContactsSerializer(serializers.Serializer):
-    """Контакты"""
-    email = serializers.EmailField(help_text="Email для связи")
-    phone = serializers.CharField(required=False, allow_blank=True, max_length=20, help_text="Телефон")
-    linkedin = serializers.URLField(required=False, allow_blank=True, help_text="LinkedIn профиль")
-    github = serializers.URLField(required=False, allow_blank=True, help_text="GitHub профиль")
-    website = serializers.URLField(required=False, allow_blank=True, help_text="Личный сайт")
-    telegram = serializers.CharField(required=False, allow_blank=True, max_length=50, help_text="Telegram")
-
-class DesignPreferencesSerializer(serializers.Serializer):
-    """Настройки дизайна"""
-    style = serializers.ChoiceField(
-        choices=[
-            ('modern', 'Современный'),
-            ('creative', 'Креативный'),
-            ('minimal', 'Минималистичный'),
-            ('corporate', 'Корпоративный'),
-            ('dark', 'Темный'),
-            ('colorful', 'Яркий'),
-        ],
-        default='modern',
-        help_text="Стиль дизайна"
-    )
-    colorScheme = serializers.ChoiceField(
-        choices=[
-            ('professional', 'Профессиональная'),
-            ('creative', 'Креативная'),
-            ('minimal', 'Минимальная'),
-            ('warm', 'Теплая'),
-            ('cool', 'Холодная'),
-            ('nature', 'Природная'),
-        ],
-        default='professional',
-        help_text="Цветовая схема"
-    )
-    theme = serializers.ChoiceField(
-        choices=[
-            ('clean', 'Чистая'),
-            ('bold', 'Смелая'),
-            ('elegant', 'Элегантная'),
-            ('playful', 'Игривая'),
-            ('serious', 'Серьезная'),
-        ],
-        default='clean',
-        help_text="Тема"
-    )
-
-class AIGenerationRequestSerializer(serializers.Serializer):
-    """Сериализатор для запроса AI генерации персонального портфолио"""
-    
-    personal_info = PersonalInfoSerializer(help_text="Персональная информация")
-    education = EducationSerializer(required=False, help_text="Образование")
-    experience = ExperienceSerializer(many=True, required=False, help_text="Опыт работы")
-    skills = SkillsSerializer(help_text="Навыки и технологии")
-    projects = ProjectSerializer(many=True, required=False, help_text="Проекты и работы")
-    contacts = ContactsSerializer(help_text="Контактная информация")
-    design_preferences = DesignPreferencesSerializer(help_text="Настройки дизайна")
-    profile_photo = serializers.ImageField(required=False, help_text="Фото профиля")
-    
-    def validate_personal_info(self, value):
-        """Валидация персональной информации"""
-        if not value.get('firstName') or not value.get('lastName'):
-            raise serializers.ValidationError("Имя и фамилия обязательны")
-        if not value.get('profession'):
-            raise serializers.ValidationError("Укажите вашу профессию")
-        return value
-    
-    def validate_skills(self, value):
-        """Валидация навыков"""
-        if not value.get('technical') or len(value.get('technical', [])) == 0:
-            raise serializers.ValidationError("Добавьте хотя бы один технический навык")
-        return value
-
-    def validate_projects(self, value):
-        """Валидация проектов"""
-        if not value or len(value) == 0:
-            raise serializers.ValidationError("Добавьте хотя бы один проект")
-        return value 
+    total_tokens_used = serializers.IntegerField()
+    favorite_templates = serializers.ListField()
+    today_usage = serializers.DictField()
+    limits_info = serializers.DictField() 

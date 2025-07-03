@@ -1,386 +1,219 @@
-import { getAuthHeaders } from '../../lib/auth-utils';
-import { API_BASE_URL } from '../auth/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-class AIAPIError extends Error {
-  constructor(message, code, status) {
-    super(message);
-    this.code = code;
-    this.status = status;
-  }
+/**
+ * 🤖 API ДЛЯ РАБОТЫ С AI ЗАПОЛНЕНИЕМ ШАБЛОНОВ
+ */
+
+class AIAPI {
+    constructor() {
+        this.baseURL = `${API_BASE_URL}/api/ai`;
+    }
+
+    /**
+     * Получение токена авторизации
+     */
+    getAuthHeaders() {
+        const token = localStorage.getItem('access_token');
+        return token ? {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        } : {
+            'Content-Type': 'application/json',
+        };
+    }
+
+    /**
+     * 🤖 AI заполнение шаблона
+     */
+    async generateTemplate(templateId, aiData) {
+        try {
+            const response = await fetch(`${this.baseURL}/templates/${templateId}/generate/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    project_title: aiData.projectTitle,
+                    project_description: aiData.projectDescription,
+                    user_data: aiData.userData,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw {
+                    status: response.status,
+                    message: data.error || 'Ошибка AI генерации',
+                    code: data.error_code,
+                    details: data.details
+                };
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Ошибка AI генерации:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 🔒 Получение лимитов AI генераций пользователя
+     */
+    async getUserLimits() {
+        try {
+            const response = await fetch(`${this.baseURL}/limits/`, {
+                method: 'GET',
+                headers: this.getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Ошибка получения лимитов:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 📊 Получение статистики AI использования
+     */
+    async getAIStats() {
+        try {
+            const response = await fetch(`${this.baseURL}/stats/`, {
+                method: 'GET',
+                headers: this.getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Ошибка получения статистики AI:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 📝 Получение истории AI генераций
+     */
+    async getAIHistory(params = {}) {
+        try {
+            const queryParams = new URLSearchParams();
+            
+            if (params.page) queryParams.append('page', params.page);
+            if (params.page_size) queryParams.append('page_size', params.page_size);
+
+            const url = `${this.baseURL}/history/?${queryParams.toString()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: this.getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Ошибка получения истории AI:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 📈 Учет обычного использования шаблона
+     */
+    async trackRegularUsage(templateId) {
+        try {
+            const response = await fetch(`${this.baseURL}/track-regular-usage/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    template_id: templateId,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка учета использования');
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Ошибка учета использования:', error);
+            throw error;
+        }
+    }
 }
 
-export const aiAPI = {
-  /**
-   * 🚀 ЕДИНСТВЕННЫЙ МЕТОД ДЛЯ ГЕНЕРАЦИИ ПОРТФОЛИО
-   * Оптимизированная генерация с одним запросом к AI
-   */
-  async generatePortfolio(data) {
-    return this.smartGenerate(data);
-  },
+// Создаем и экспортируем экземпляр API
+export const aiAPI = new AIAPI();
 
-  /**
-   * Получение лимитов пользователя
-   */
-  async getUserLimits() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/limits/`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения лимитов');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching AI limits:', error);
-      throw error;
+// Утилиты для работы с ошибками
+export const getAIErrorMessage = (error) => {
+    switch (error.code) {
+        case 'PREMIUM_REQUIRED':
+            return 'AI генерация доступна только Premium пользователям';
+        case 'DAILY_LIMIT_EXCEEDED':
+            return 'Превышен дневной лимит AI генераций';
+        case 'TEMPLATE_NOT_FOUND':
+            return 'Шаблон не найден';
+        case 'AI_SERVICE_ERROR':
+            return 'Ошибка сервиса AI. Попробуйте позже';
+        case 'VALIDATION_ERROR':
+            return 'Проверьте правильность введенных данных';
+        default:
+            return error.message || 'Произошла ошибка при AI генерации';
     }
-  },
-
-  /**
-   * Получение истории AI генераций
-   */
-  async getGenerationHistory(page = 1, pageSize = 20) {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/ai/history/?page=${page}&page_size=${pageSize}`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения истории');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching AI history:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Получение статистики пользователя
-   */
-  async getUserStats() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/stats/`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения статистики');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching AI stats:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Получение шаблонов промптов
-   */
-  async getPromptTemplates(category = null, style = null) {
-    try {
-      const params = new URLSearchParams();
-      if (category) params.append('category', category);
-      if (style) params.append('style', style);
-
-      const response = await fetch(
-        `${API_BASE_URL}/ai/templates/?${params.toString()}`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения шаблонов');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching AI templates:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Сохранение промпта как шаблона
-   */
-  async savePromptTemplate(templateData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/templates/save/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(templateData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Ошибка сохранения шаблона');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error saving AI template:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Удаление шаблона промпта
-   */
-  async deletePromptTemplate(templateId) {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/ai/templates/${templateId}/delete/`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Ошибка удаления шаблона');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting AI template:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 🚀 ОПТИМИЗИРОВАННАЯ генерация портфолио - один запрос к AI!
-   */
-  async smartGenerate(data) {
-    try {
-      // Проверяем тип данных и используем соответствующий формат
-      let requestBody;
-      let headers = { ...getAuthHeaders() };
-      
-      // Если есть файлы, используем FormData
-      if (data.profile_photo || (data.education && data.education.diplomaImage)) {
-        const formData = new FormData();
-        
-        // Добавляем JSON данные
-        formData.append('personal_info', JSON.stringify(data.personal_info));
-        formData.append('education', JSON.stringify({
-          university: data.education?.university || '',
-          degree: data.education?.degree || '',
-          field: data.education?.field || '',
-          graduationYear: data.education?.graduationYear || ''
-        }));
-        formData.append('experience', JSON.stringify(data.experience || []));
-        formData.append('skills', JSON.stringify(data.skills || {}));
-        formData.append('projects', JSON.stringify(data.projects || []));
-        formData.append('contacts', JSON.stringify(data.contacts || {}));
-        formData.append('design_preferences', JSON.stringify(data.design_preferences || {}));
-        
-        // Добавляем файлы если есть
-        if (data.profile_photo) {
-          formData.append('profile_photo', data.profile_photo);
-        }
-        if (data.education?.diplomaImage) {
-          formData.append('diplomaImage', data.education.diplomaImage);
-        }
-        
-        requestBody = formData;
-        // Не устанавливаем Content-Type для FormData
-      } else {
-        // Обычный JSON запрос
-        headers['Content-Type'] = 'application/json';
-        requestBody = JSON.stringify(data);
-      }
-
-      const response = await fetch(`${API_BASE_URL}/ai/smart-generate/`, {
-        method: 'POST',
-        headers,
-        body: requestBody
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new AIAPIError(
-          result.error || 'Ошибка генерации',
-          result.error_code || 'UNKNOWN',
-          response.status
-        );
-      }
-
-      return result;
-    } catch (error) {
-      if (error instanceof AIAPIError) {
-        throw error;
-      }
-      console.error('AI Generation Error:', error);
-      throw new AIAPIError('Ошибка сети', 'NETWORK_ERROR', 0);
-    }
-  },
-
-  /**
-   * Получение метрик AI генерации
-   */
-  async getMetrics() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/metrics/`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения метрик');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching AI metrics:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Получение информации о кэше AI
-   */
-  async getCacheInfo() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/cache/`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения информации о кэше');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching cache info:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Очистка кэша AI (только для админов)
-   */
-  async clearCache() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/cache/clear/`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Ошибка очистки кэша');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error clearing cache:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Получение детальной статистики пользователя
-   */
-  async getUserDetailedStats() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/stats/user/`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения детальной статистики');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching detailed user stats:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Получение глобальной статистики (только для админов)
-   */
-  async getGlobalStats() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai/stats/global/`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения глобальной статистики');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching global stats:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Получение истории AI генераций с расширенными фильтрами
-   */
-  async getGenerationHistoryAdvanced(filters = {}) {
-    try {
-      const params = new URLSearchParams();
-      
-      if (filters.page) params.append('page', filters.page);
-      if (filters.page_size) params.append('page_size', filters.page_size);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.style) params.append('style', filters.style);
-
-      const response = await fetch(
-        `${API_BASE_URL}/ai/history/?${params.toString()}`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Ошибка получения истории');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching advanced AI history:', error);
-      throw error;
-    }
-  },
 };
 
-// Константы для кодов ошибок
-export const AI_ERROR_CODES = {
-  LIMIT_EXCEEDED: 'LIMIT_EXCEEDED',
-  NOT_PREMIUM: 'NOT_PREMIUM',
-  TIMEOUT: 'TIMEOUT',
-  AI_ERROR: 'AI_ERROR',
-  INVALID_RESPONSE: 'INVALID_RESPONSE',
-  NETWORK_ERROR: 'NETWORK_ERROR',
+// Константы
+export const AI_STATUS = {
+    'pending': 'Ожидает',
+    'processing': 'Обрабатывается',
+    'completed': 'Завершено',
+    'failed': 'Ошибка'
 };
 
-// Человекочитаемые сообщения об ошибках
-export const getErrorMessage = (errorCode) => {
-  const messages = {
-    [AI_ERROR_CODES.LIMIT_EXCEEDED]: 'Превышен дневной лимит AI генераций',
-    [AI_ERROR_CODES.NOT_PREMIUM]: 'AI генерация доступна только Premium пользователям',
-    [AI_ERROR_CODES.TIMEOUT]: 'Время ожидания истекло. Попробуйте позже',
-    [AI_ERROR_CODES.AI_ERROR]: 'Сервера AI временно недоступны',
-    [AI_ERROR_CODES.INVALID_RESPONSE]: 'AI вернул некорректный код. Попробуйте изменить промпт',
-    [AI_ERROR_CODES.NETWORK_ERROR]: 'Ошибка сети. Проверьте подключение к интернету',
-  };
+export const DEFAULT_USER_DATA_PLACEHOLDER = `Пример заполнения:
 
-  return messages[errorCode] || 'Неизвестная ошибка';
-}; 
+ПЕРСОНАЛЬНАЯ ИНФОРМАЦИЯ:
+- Имя: Иван Петров
+- Специализация: Frontend разработчик
+- Опыт: 3 года
+- Местоположение: Москва
+
+ОБРАЗОВАНИЕ:
+- Университет: МГУ
+- Специальность: Информатика
+- Год окончания: 2020
+
+НАВЫКИ:
+- JavaScript, React, Vue.js
+- HTML5, CSS3, SASS
+- Git, Webpack, Node.js
+- Figma, Adobe XD
+
+ОПЫТ РАБОТЫ:
+- Frontend Developer в TechCorp (2021-2024)
+- Junior Developer в StartupXYZ (2020-2021)
+
+ПРОЕКТЫ:
+- Интернет-магазин на React
+- Корпоративный сайт с CMS
+- Мобильное приложение на React Native
+
+КОНТАКТЫ:
+- Email: ivan@example.com
+- GitHub: github.com/ivan
+- LinkedIn: linkedin.com/in/ivan
+- Телефон: +7 999 123-45-67`; 
