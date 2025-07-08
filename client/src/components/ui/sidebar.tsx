@@ -26,8 +26,8 @@ const IconMenu2 = ({ className, onClick }: { className?: string; onClick?: () =>
 
 const IconX = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
   <svg 
-    width="24" 
-    height="24" 
+    width="26" 
+    height="26" 
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
@@ -127,11 +127,11 @@ export const DesktopSidebar = ({
     <>
       <motion.div
         className={cn(
-          "h-full px-0 py-4 hidden md:flex md:flex-col bg-black w-[300px] shrink-0",
+          "h-full px-0 py-4 hidden md:flex md:flex-col bg-black w-[300px] shrink-0 overflow-hidden",
           className
         )}
         animate={{
-          width: animate ? (open ? "300px" : "70px") : "300px",
+          width: animate ? (open ? "200px" : "50px") : "300px",
         }}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}

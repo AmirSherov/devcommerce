@@ -58,7 +58,7 @@ def project_list(request):
     except:
         projects_page = paginator.page(1)
     
-    serializer = ProjectListSerializer(projects_page.object_list, many=True)
+    serializer = ProjectListSerializer(projects_page.object_list, many=True, context={'request': request})
     
     return Response({
         'results': serializer.data,
@@ -69,6 +69,43 @@ def project_list(request):
         'has_next': projects_page.has_next(),
         'has_previous': projects_page.has_previous()
     }, status=status.HTTP_200_OK)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def other_projects(request, project_id):
+    try:
+        project = get_object_or_404(Project, id=project_id)
+        project_author = project.author
+        
+        # Получаем все публичные проекты, кроме текущего
+        all_public_projects = Project.objects.filter(
+            status='public'
+        ).exclude(id=project_id).order_by('-created_at')
+        
+        # Сериализуем все проекты с контекстом
+        serializer = ProjectListSerializer(
+            all_public_projects, 
+            many=True, 
+            context={
+                'request': request,
+                'current_author_id': project_author.id
+            }
+        )
+        
+        return Response({
+            'results': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Ошибка при получении проектов',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 @api_view(['GET'])
@@ -103,7 +140,7 @@ def my_projects(request):
     except:
         projects_page = paginator.page(1)
     
-    serializer = ProjectDetailSerializer(projects_page.object_list, many=True)
+    serializer = ProjectDetailSerializer(projects_page.object_list, many=True, context={'request': request})
     
     return Response({
         'results': serializer.data,
@@ -127,7 +164,7 @@ def create_project(request):
     if serializer.is_valid():
         try:
             project = serializer.save()
-            response_serializer = ProjectDetailSerializer(project)
+            response_serializer = ProjectDetailSerializer(project, context={'request': request})
             
             return Response({
                 'message': 'Проект успешно создан',
@@ -161,7 +198,7 @@ def update_project(request, project_id):
     if serializer.is_valid():
         try:
             project = serializer.save()
-            response_serializer = ProjectDetailSerializer(project)
+            response_serializer = ProjectDetailSerializer(project, context={'request': request})
             
             return Response({
                 'message': 'Проект успешно обновлен',
@@ -250,13 +287,12 @@ def update_project_status(request, project_id):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def project_detail(request, slug):
+def project_detail(request, project_id):
     """
     GET /projects/{slug}/ - получение проекта по slug
     """
     try:
-        project = get_object_or_404(Project, slug=slug)
-        
+        project = get_object_or_404(Project, id=project_id)
         # Проверяем видимость проекта
         if not project.is_visible_to_user(request.user if request.user.is_authenticated else None):
             return Response({
@@ -267,7 +303,7 @@ def project_detail(request, slug):
         if request.user.is_authenticated and request.user != project.author:
             project.increment_views()
         
-        serializer = ProjectDetailSerializer(project)
+        serializer = ProjectDetailSerializer(project, context={'request': request})
         
         return Response({
             'project': serializer.data
@@ -327,7 +363,7 @@ def user_projects(request, username):
     except:
         projects_page = paginator.page(1)
     
-    serializer = ProjectListSerializer(projects_page.object_list, many=True)
+    serializer = ProjectListSerializer(projects_page.object_list, many=True, context={'request': request})
     
     return Response({
         'results': serializer.data,
@@ -342,4 +378,28 @@ def user_projects(request, username):
             'username': user.username,
             'full_name': user.full_name
         }
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_project_like(request, project_id):
+    """POST /projects/toggle-like/<id>/ – лайк или дизлайк проекта"""
+    project = get_object_or_404(Project, id=project_id)
+
+    from .models import ProjectLike  # локальный импорт, чтобы избежать циклов
+
+    like_obj, created = ProjectLike.objects.get_or_create(project=project, user=request.user)
+
+    if created:
+        project.increment_likes()
+        liked = True
+    else:
+        like_obj.delete()
+        project.decrement_likes()
+        liked = False
+
+    return Response({
+        'likes': project.likes,
+        'is_liked_by_user': liked
     }, status=status.HTTP_200_OK)

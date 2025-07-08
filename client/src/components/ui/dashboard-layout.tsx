@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { Sidebar, SidebarBody, SidebarLink } from './sidebar';
+import { Sidebar, SidebarBody, SidebarLink, useSidebar } from './sidebar';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 
@@ -52,6 +52,15 @@ const LogoutIcon = () => (
   </svg>
 );
 
+const ProjectsIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0H5"></path>
+    <line x1="12" y1="12" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12" y2="12"></line>
+    <line x1="12" y1="16" x2="12" y2="16"></line>
+  </svg>
+);
+  
 interface DashboardLayoutProps {
   children: React.ReactNode;
   activePage?: string;
@@ -96,6 +105,12 @@ export default function DashboardLayout({ children, activePage = 'dashboard' }: 
       id: "templates"
     },
     {
+      label: "Проекты",
+      href: "/projects",
+      icon: <ProjectsIcon />,
+      id: "projects"
+    },
+    {
       label: "Настройки",
       href: "/settings",
       icon: <SettingsIcon />,
@@ -109,6 +124,30 @@ export default function DashboardLayout({ children, activePage = 'dashboard' }: 
     },
   ];
 
+  const SidebarLogo = () => {
+    const { open, animate } = useSidebar();
+    return (
+      <div
+        className="flex items-center py-3 px-3 cursor-pointer min-h-[48px]"
+        onClick={() => router.push('/')}
+      >
+        <div className="h-6 w-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span className="text-white font-bold text-xs">D</span>
+        </div>
+        <motion.span
+          className="font-medium text-white whitespace-nowrap ml-3"
+          animate={{
+            display: animate ? (open ? 'inline-block' : 'none') : 'inline-block',
+            opacity: animate ? (open ? 1 : 0) : 1,
+          }}
+          initial={false}
+        >
+          DevCommerce
+        </motion.span>
+      </div>
+    );
+  };
+
   return (
     <div className={cn(
       "flex flex-col md:flex-row bg-black w-full mx-auto",
@@ -118,18 +157,7 @@ export default function DashboardLayout({ children, activePage = 'dashboard' }: 
         <SidebarBody className="justify-between gap-10 bg-black border-r border-gray-800">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             {/* Logo */}
-            <div className="flex items-center py-3 px-3 cursor-pointer min-h-[48px]" onClick={() => router.push('/')}>
-              <div className="h-6 w-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-xs">D</span>
-              </div>
-              <motion.span 
-                className="font-medium text-white whitespace-nowrap ml-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                DevCommerce
-              </motion.span>
-            </div>
+            <SidebarLogo />
 
             <div className="mt-8 flex flex-col gap-1">
               {links.map((link, idx) => (

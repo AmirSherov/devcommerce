@@ -96,8 +96,7 @@ export default function ProjectsTab() {
           <div className="flex-shrink-0">
             {project.project_photo ? (
               <img
-                src={`http://127.0.0.1:8000${project.project_photo}`}
-                alt={project.title}
+                src={project.project_photo}                alt={project.title}
                 className="w-32 h-32 object-cover rounded-lg border border-gray-700"
               />
             ) : (

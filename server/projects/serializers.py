@@ -15,29 +15,51 @@ class AuthorSerializer(serializers.ModelSerializer):
 class ProjectListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка проектов (краткая информация)"""
     author = AuthorSerializer(read_only=True)
+    is_liked_by_user = serializers.SerializerMethodField()
+    is_from_same_author = serializers.SerializerMethodField()
     
     class Meta:
         model = Project
         fields = (
             'id', 'title', 'description', 'project_photo', 'status',
             'technologies', 'likes', 'views', 'comments_count', 'author',
-            'created_at', 'updated_at', 'slug'
+            'created_at', 'updated_at', 'slug', 'is_liked_by_user', 'is_from_same_author'
         )
-        read_only_fields = ('id', 'likes', 'views', 'comments_count', 'created_at', 'updated_at', 'slug')
+        read_only_fields = ('id', 'likes', 'views', 'comments_count', 'created_at', 'updated_at', 'slug', 'is_liked_by_user', 'is_from_same_author')
+
+    def get_is_liked_by_user(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes_set.filter(user=request.user).exists()
+        return False
+
+    def get_is_from_same_author(self, obj):
+        # Получаем ID автора текущего проекта из контекста
+        current_author_id = self.context.get('current_author_id')
+        if current_author_id:
+            return obj.author.id == current_author_id
+        return False
 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
     """Сериализатор для детальной информации о проекте"""
     author = AuthorSerializer(read_only=True)
+    is_liked_by_user = serializers.SerializerMethodField()
     
     class Meta:
         model = Project
         fields = (
             'id', 'title', 'description', 'github_link', 'project_public_link',
             'project_photo', 'status', 'technologies', 'likes', 'views',
-            'comments_count', 'author', 'created_at', 'updated_at', 'slug'
+            'comments_count', 'author', 'created_at', 'updated_at', 'slug', 'is_liked_by_user'
         )
-        read_only_fields = ('id', 'likes', 'views', 'comments_count', 'author', 'created_at', 'updated_at', 'slug')
+        read_only_fields = ('id', 'likes', 'views', 'comments_count', 'author', 'created_at', 'updated_at', 'slug', 'is_liked_by_user')
+
+    def get_is_liked_by_user(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes_set.filter(user=request.user).exists()
+        return False
 
 
 class ProjectCreateSerializer(serializers.ModelSerializer):

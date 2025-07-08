@@ -125,3 +125,48 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
+
+# ---------------------------------------------------------------
+# Модель лайка проекта
+# ---------------------------------------------------------------
+
+
+class ProjectLike(models.Model):
+    """Связь лайков пользователей и проектов"""
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='likes_set')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('project', 'user')
+        verbose_name = 'Лайк проекта'
+        verbose_name_plural = 'Лайки проектов'
+
+    def __str__(self):
+        return f"{self.user} -> {self.project}"
+
+
+class ProjectComment(models.Model):
+    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_comments')
+    text = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    is_pinned = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Comment by {self.author} on {self.project}'
+
+class ProjectCommentLike(models.Model):
+    comment = models.ForeignKey(ProjectComment, on_delete=models.CASCADE, related_name='likes_set')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('comment', 'user')
