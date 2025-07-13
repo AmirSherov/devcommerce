@@ -23,6 +23,7 @@ from portfolio.views import public_portfolio_site
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
+    path('api/settings/', include('settings.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/portfolio/', include('portfolio.urls')),
     path('api/ai/', include('ai_generator.urls')),

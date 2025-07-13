@@ -1,4 +1,5 @@
 const API_BASE_URL = 'http://127.0.0.1:8000/api/projects';
+import { getAuthHeaders, getSessionHeaders } from '../../lib/auth-utils';
 
 export async function fetchProjectComments(projectId, token) {
     const res = await fetch(`${API_BASE_URL}/${projectId}/comments/`, {
@@ -12,7 +13,8 @@ export async function createProjectComment(projectId, data, token) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token || ''}`
+            ...getAuthHeaders(),
+            ...getSessionHeaders(),
         },
         body: JSON.stringify(data)
     });
@@ -24,7 +26,8 @@ export async function editProjectComment(commentId, data, token) {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token || ''}`
+            ...getAuthHeaders(),
+            ...getSessionHeaders(),
         },
         body: JSON.stringify(data)
     });

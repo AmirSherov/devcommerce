@@ -1,4 +1,5 @@
 import jwt
+import hashlib
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -6,6 +7,11 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
 User = get_user_model()
+
+
+def get_token_hash(token):
+    """Получить хеш токена"""
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 class JWTAuthentication(BaseAuthentication):
@@ -33,6 +39,18 @@ class JWTAuthentication(BaseAuthentication):
             raise AuthenticationFailed('Token has expired')
         except jwt.InvalidTokenError:
             raise AuthenticationFailed('Invalid token')
+        
+        # Проверить активную сессию вместо blacklist
+        try:
+            from settings.models import UserSession
+            token_hash = get_token_hash(token)
+            user_id = payload.get('user_id')
+            
+            if not UserSession.is_valid_token(token_hash, user_id):
+                raise AuthenticationFailed('Session has been terminated')
+        except ImportError:
+            # Если приложение settings не установлено, пропускаем проверку
+            pass
         
         try:
             user = User.objects.get(id=payload['user_id'])

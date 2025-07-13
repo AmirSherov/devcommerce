@@ -1,10 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+import { getAuthHeaders, getSessionHeaders } from '../../lib/auth-utils';
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('access_token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
@@ -30,6 +26,8 @@ export const portfolioAPI = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     
@@ -43,6 +41,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     
@@ -56,6 +55,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     
@@ -69,6 +69,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(portfolioData),
     });
@@ -83,6 +84,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(portfolioData),
     });
@@ -97,6 +99,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(codeData),
     });
@@ -111,6 +114,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     
@@ -124,6 +128,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     
@@ -152,6 +157,7 @@ export const portfolioAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     

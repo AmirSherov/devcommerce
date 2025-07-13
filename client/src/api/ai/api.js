@@ -29,7 +29,11 @@ class AIAPI {
         try {
             const response = await fetch(`${this.baseURL}/templates/${templateId}/generate/`, {
                 method: 'POST',
-                headers: this.getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.getAuthHeaders(),
+                    ...this.getSessionHeaders(),
+                },
                 body: JSON.stringify({
                     project_title: aiData.projectTitle,
                     project_description: aiData.projectDescription,
@@ -62,7 +66,11 @@ class AIAPI {
         try {
             const response = await fetch(`${this.baseURL}/limits/`, {
                 method: 'GET',
-                headers: this.getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.getAuthHeaders(),
+                    ...this.getSessionHeaders(),
+                },
             });
 
             if (!response.ok) {
@@ -84,7 +92,11 @@ class AIAPI {
         try {
             const response = await fetch(`${this.baseURL}/stats/`, {
                 method: 'GET',
-                headers: this.getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.getAuthHeaders(),
+                    ...this.getSessionHeaders(),
+                },
             });
 
             if (!response.ok) {
@@ -113,7 +125,11 @@ class AIAPI {
             
             const response = await fetch(url, {
                 method: 'GET',
-                headers: this.getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.getAuthHeaders(),
+                    ...this.getSessionHeaders(),
+                },
             });
 
             if (!response.ok) {
@@ -135,7 +151,11 @@ class AIAPI {
         try {
             const response = await fetch(`${this.baseURL}/track-regular-usage/`, {
                 method: 'POST',
-                headers: this.getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.getAuthHeaders(),
+                    ...this.getSessionHeaders(),
+                },
                 body: JSON.stringify({
                     template_id: templateId,
                 }),

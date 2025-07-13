@@ -1,3 +1,5 @@
+import { getSessionHeaders } from '../../lib/auth-utils';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
 
 const getAuthToken = () => {
@@ -47,7 +49,11 @@ export const projectsAPI = {
     });
 
     const response = await fetch(`${API_BASE_URL}/projects/me/?${params}`, {
-      headers: getAuthHeaders()
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getSessionHeaders(),
+      },
     });
     
     if (!response.ok) {

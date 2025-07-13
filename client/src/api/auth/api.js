@@ -1,15 +1,27 @@
-import { setAuthToken, getAuthToken, removeAuthToken, isAuthenticated, getAuthHeaders } from '../../lib/auth-utils';
+import { setAuthToken, getAuthToken, removeAuthToken, isAuthenticated, getAuthHeaders, setSessionKey, getSessionKey, removeSessionKey, getSessionHeaders } from '../../lib/auth-utils';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
+// Универсальный обработчик ошибок авторизации
+function handleAuthError(status, errorMessage) {
+  const isAuthError =
+    status === 401 ||
+    /session has been terminated|invalid token|unauthorized/i.test(errorMessage);
+  if (isAuthError && typeof window !== 'undefined') {
+    removeAuthToken();
+    removeSessionKey();
+    window.location.href = '/auth';
+  }
+}
+
 // Helper function to handle API responses
 const handleResponse = async (response) => {
-  const data = await response.json();
-  
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'An error occurred');
+    const errorMessage = data.message || data.error || data.detail || 'An error occurred';
+    handleAuthError(response.status, errorMessage);
+    throw new Error(`${response.status}: ${errorMessage}`);
   }
-  
   return data;
 };
 
@@ -21,6 +33,8 @@ export const authAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(userData),
     });
@@ -30,6 +44,10 @@ export const authAPI = {
     // Store token if registration successful
     if (data.token) {
       setAuthToken(data.token);
+    }
+    // Store session_key if present
+    if (data.session_key) {
+      setSessionKey(data.session_key);
     }
     
     return data;
@@ -41,6 +59,8 @@ export const authAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(credentials),
     });
@@ -51,15 +71,47 @@ export const authAPI = {
     if (data.token) {
       setAuthToken(data.token);
     }
+    // Store session_key if present
+    if (data.session_key) {
+      setSessionKey(data.session_key);
+    }
     
     return data;
   },
 
   // Logout user
-  logout: () => {
-    removeAuthToken();
-    // You can also call a logout endpoint if needed
-    return Promise.resolve();
+  logout: async () => {
+    try {
+      // Отправить запрос на сервер для logout
+      const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+          ...getSessionHeaders(),
+        },
+      });
+
+      // Очистить токены из localStorage независимо от ответа сервера
+      removeAuthToken();
+      removeSessionKey();
+
+      // Если запрос успешен, возвращаем результат
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
+        // Если ошибка на сервере, всё равно очищаем локальные данные
+        console.warn('Server logout failed, but local data cleared');
+        return { message: 'Logged out locally' };
+      }
+    } catch (error) {
+      // Если сеть недоступна, всё равно очищаем локальные данные
+      removeAuthToken();
+      removeSessionKey();
+      console.warn('Network error during logout, but local data cleared');
+      return { message: 'Logged out locally' };
+    }
   },
 
   // Get current user data
@@ -69,6 +121,7 @@ export const authAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     
@@ -82,6 +135,7 @@ export const authAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(profileData),
     });
@@ -95,6 +149,8 @@ export const authAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify({ email }),
     });
@@ -108,6 +164,8 @@ export const authAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(resetData),
     });
@@ -122,6 +180,7 @@ export const authAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify(passwordData),
     });
@@ -136,6 +195,7 @@ export const authAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
       body: JSON.stringify({ code }),
     });
@@ -150,6 +210,7 @@ export const authAPI = {
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
+        ...getSessionHeaders(),
       },
     });
     

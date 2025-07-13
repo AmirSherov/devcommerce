@@ -40,3 +40,30 @@ export const getAuthHeaders = () => {
   const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }; 
+
+// ===== Работа с session_key =====
+export const setSessionKey = (sessionKey) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('session_key', sessionKey);
+  }
+};
+
+export const getSessionKey = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('session_key');
+  }
+  return null;
+};
+
+export const removeSessionKey = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('session_key');
+  }
+};
+
+export const getSessionHeaders = () => {
+  const sessionKey = getSessionKey();
+  return sessionKey ? { 'X-Session-Key': sessionKey } : {};
+}; 
+
+export { setSessionKey, getSessionKey, removeSessionKey, getSessionHeaders }; 

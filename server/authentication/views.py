@@ -16,6 +16,8 @@ from .serializers import (
 )
 from .authentication import generate_jwt_token
 from .utils import send_password_reset_email, send_email_verification_code
+from settings.views import create_session_record
+from settings.services import create_user_session
 
 User = get_user_model()
 
@@ -43,10 +45,17 @@ def register(request):
                 # Generate JWT token
                 token = generate_jwt_token(user)
                 
+                # Создать сессию
+                session_key = request.session.session_key or request.session._get_or_create_session_key()
+                ip_address = request.META.get('REMOTE_ADDR')
+                user_agent = request.META.get('HTTP_USER_AGENT', '')
+                create_user_session(user, session_key, ip_address, user_agent)
+                
                 return Response({
                     'message': 'Registration successful',
                     'user': UserSerializer(user).data,
                     'token': token,
+                    'session_key': session_key,
                     'verification_code_sent': True
                 }, status=status.HTTP_201_CREATED)
                 
@@ -68,13 +77,53 @@ def login(request):
         user = serializer.validated_data['user']
         token = generate_jwt_token(user)
         
+        # Создать сессию с JWT токеном
+        session_key = request.session.session_key or request.session._get_or_create_session_key()
+        ip_address = request.META.get('REMOTE_ADDR')
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        create_user_session(user, session_key, ip_address, user_agent, token)
+        
         return Response({
             'message': 'Login successful',
             'user': UserSerializer(user).data,
-            'token': token
+            'token': token,
+            'session_key': session_key
         }, status=status.HTTP_200_OK)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """User logout endpoint"""
+    try:
+        # Получить session_key из заголовка X-Session-Key
+        session_key = request.META.get('HTTP_X_SESSION_KEY')
+        
+        # Деактивировать текущую сессию
+        if session_key:
+            from settings.models import UserSession
+            try:
+                user_session = UserSession.objects.get(
+                    session_key=session_key,
+                    user=request.user,
+                    is_active=True
+                )
+                user_session.is_active = False
+                user_session.save()
+            except UserSession.DoesNotExist:
+                pass  # Сессия не найдена, это нормально
+        
+        return Response({
+            'message': 'Logout successful'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Logout failed',
+            'details': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -275,3 +324,15 @@ def resend_verification_code(request):
             'error': 'Failed to send verification code',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def user_update(request):
+    """Update user data"""
+    serializer = UserSerializer(request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            'message': 'User updated successfully',
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)

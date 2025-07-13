@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'portfolio',
     'ai_generator',
     'portfolio_templates',
+    'settings',
 ]
 
 MIDDLEWARE = [
@@ -157,12 +158,28 @@ REST_FRAMEWORK = {
 
 JWT_SECRET_KEY = SECRET_KEY
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_DELTA = timedelta(days=1)
+JWT_EXPIRATION_DELTA = timedelta(days=5)
 
 CORS_ALLOW_ALL_ORIGINS = True  
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3005",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3005",
+]
+
+# Разрешаем кастомные заголовки
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-session-key',  # Добавляем наш кастомный заголовок
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

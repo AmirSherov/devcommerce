@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { authAPI } from '../api/auth/api';
+import { removeSessionKey } from '../lib/auth-utils';
 
 // Initial state
 const initialState = {
@@ -85,9 +86,15 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.SET_USER, payload: response.user });
     } catch (error) {
       console.error('Auth check failed:', error);
-      // If token is invalid, remove it
-      authAPI.logout();
-      dispatch({ type: AUTH_ACTIONS.SET_USER, payload: null });
+      
+      // Только если ошибка 401 (Unauthorized), делаем logout
+      if (error.message.includes('401') || error.message.includes('Unauthorized') || error.message.includes('Invalid token')) {
+        authAPI.logout();
+        dispatch({ type: AUTH_ACTIONS.SET_USER, payload: null });
+      } else {
+        // Для других ошибок не делаем logout, просто логируем
+        console.warn('Auth check failed but not logging out:', error.message);
+      }
     }
   }, []);
 
@@ -129,6 +136,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       await authAPI.logout();
+      removeSessionKey();
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     } catch (error) {
       console.error('Logout error:', error);
