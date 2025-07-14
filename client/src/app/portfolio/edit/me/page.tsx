@@ -7,6 +7,7 @@ import { portfolioAPI } from '../../../../api/portfolio/api';
 import Editor from '@monaco-editor/react';
 import ConfirmModal from '../../../../components/ui/confirm-modal';
 import CreateProjectModal, { ProjectFormData } from '../../../../components/ui/create-project-modal';
+import Loader from '../../../../components/simple-loader';
 
 interface Portfolio {
   id: string;
@@ -449,8 +450,8 @@ document.addEventListener("DOMContentLoaded", function() {
   if (isLoading || isLoadingPortfolios) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-lg">Загрузка редактора...</div>
-      </div>
+      <Loader text="Загрузка редактора..." fullScreen={true} />
+    </div>
     );
   }
 

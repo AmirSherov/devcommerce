@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { portfolioAPI } from '../../../../api/portfolio/api';
 import ConfirmModal from '../../../../components/ui/confirm-modal';
-
+import SimpleLoader from '@/components/simple-loader';  
 interface Portfolio {
   id: string;
   title: string;
@@ -487,11 +487,9 @@ export default function PortfolioTab() {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-center py-16">
-          <div className="text-white">Загрузка портфолио...</div>
-        </div>
-      </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+      <SimpleLoader text="Загрузка портфолио..." fullScreen={true} />
+    </div>
     );
   }
 

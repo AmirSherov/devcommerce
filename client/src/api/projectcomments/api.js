@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api/projects';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/projects' || 'http://127.0.0.1:8000/api/projects';
 import { getAuthHeaders, getSessionHeaders } from '../../lib/auth-utils';
 
 export async function fetchProjectComments(projectId, token) {

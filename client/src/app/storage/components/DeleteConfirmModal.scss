@@ -1,0 +1,120 @@
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.delete-modal {
+  background: #18181b;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  max-width: 380px;
+  width: 100%;
+  padding: 32px 28px 24px 28px;
+  animation: modalPop 0.25s cubic-bezier(.4,2,.6,1) both;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.delete-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+}
+
+.delete-modal-body {
+  color: #e5e5e5;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+
+  .cancel-btn {
+    flex: 1;
+    background: #27272a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 0;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    &:hover {
+      background: #323232;
+    }
+  }
+
+  .delete-btn {
+    flex: 1;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 0;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(239,68,68,0.08);
+    &:hover {
+      background: #dc2626;
+      box-shadow: 0 4px 16px rgba(239,68,68,0.15);
+    }
+  }
+}
+
+@media (max-width: 500px) {
+  .delete-modal {
+    max-width: 95vw;
+    padding: 18px 8px 14px 8px;
+  }
+  .delete-modal-header h3 {
+    font-size: 17px;
+  }
+  .delete-modal-body {
+    font-size: 13px;
+  }
+  .delete-modal-actions .cancel-btn,
+  .delete-modal-actions .delete-btn {
+    font-size: 13px;
+    padding: 10px 0;
+  }
+} 

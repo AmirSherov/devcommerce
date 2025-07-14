@@ -5,14 +5,14 @@ from .models import User, PasswordResetCode, EmailVerificationCode
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'username', 'first_name', 'last_name', 'is_email_verified', 'is_premium', 'is_active', 'date_joined')
-    list_filter = ('is_active', 'is_staff', 'is_superuser', 'is_email_verified', 'is_premium', 'date_joined')
+    list_display = ('email', 'username', 'first_name', 'last_name', 'is_email_verified', 'is_premium', 'plan', 'is_active', 'date_joined')
+    list_filter = ('is_active', 'is_staff', 'is_superuser', 'is_email_verified', 'is_premium', 'plan', 'date_joined')
     search_fields = ('email', 'username', 'first_name', 'last_name')
     ordering = ('-date_joined',)
     
     fieldsets = BaseUserAdmin.fieldsets + (
         ('Additional Info', {
-            'fields': ('is_email_verified', 'is_premium', 'created_at', 'updated_at')
+            'fields': ('is_email_verified', 'is_premium', 'plan', 'created_at', 'updated_at')
         }),
     )
     

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { projectsAPI } from '../../../../api/projects/api';
 import CreateProjectModal from './CreateProjectModal';
+import SimpleLoader from '@/components/simple-loader';
 export default function ProjectsTab() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -220,11 +221,9 @@ export default function ProjectsTab() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-        </div>
-      </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+      <SimpleLoader text="Загрузка проектов..." fullScreen={true} />
+    </div>
     );
   }
 

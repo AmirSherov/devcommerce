@@ -1,12 +1,14 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 /**
  * 🤖 API ДЛЯ РАБОТЫ С AI ЗАПОЛНЕНИЕМ ШАБЛОНОВ
  */
 
+import { getSessionHeaders } from '@/lib/auth-utils';
+
 class AIAPI {
     constructor() {
-        this.baseURL = `${API_BASE_URL}/api/ai`;
+        this.baseURL = `${API_BASE_URL}/ai`;
     }
 
     /**
@@ -32,7 +34,7 @@ class AIAPI {
                 headers: {
                     'Content-Type': 'application/json',
                     ...this.getAuthHeaders(),
-                    ...this.getSessionHeaders(),
+                    ...getSessionHeaders(),
                 },
                 body: JSON.stringify({
                     project_title: aiData.projectTitle,
@@ -41,16 +43,7 @@ class AIAPI {
                 }),
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw {
-                    status: response.status,
-                    message: data.error || 'Ошибка AI генерации',
-                    code: data.error_code,
-                    details: data.details
-                };
-            }
+            const data = await response.json()
 
             return data;
         } catch (error) {
@@ -69,7 +62,7 @@ class AIAPI {
                 headers: {
                     'Content-Type': 'application/json',
                     ...this.getAuthHeaders(),
-                    ...this.getSessionHeaders(),
+                    ...getSessionHeaders(),
                 },
             });
 
@@ -95,7 +88,7 @@ class AIAPI {
                 headers: {
                     'Content-Type': 'application/json',
                     ...this.getAuthHeaders(),
-                    ...this.getSessionHeaders(),
+                    ...getSessionHeaders(),
                 },
             });
 
@@ -128,7 +121,7 @@ class AIAPI {
                 headers: {
                     'Content-Type': 'application/json',
                     ...this.getAuthHeaders(),
-                    ...this.getSessionHeaders(),
+                    ...getSessionHeaders(),
                 },
             });
 
@@ -154,7 +147,7 @@ class AIAPI {
                 headers: {
                     'Content-Type': 'application/json',
                     ...this.getAuthHeaders(),
-                    ...this.getSessionHeaders(),
+                    ...getSessionHeaders(),
                 },
                 body: JSON.stringify({
                     template_id: templateId,

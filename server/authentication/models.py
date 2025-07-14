@@ -11,6 +11,19 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=30, blank=True)
     is_email_verified = models.BooleanField(default=False)
     is_premium = models.BooleanField(default=False, help_text="Премиум пользователь с расширенными возможностями")
+    
+    PLAN_CHOICES = [
+        ('standard', 'Standard'),
+        ('premium', 'Premium'),
+        ('pro', 'Pro'),
+    ]
+    plan = models.CharField(
+        max_length=20,
+        choices=PLAN_CHOICES,
+        default='standard',
+        help_text="План подписки пользователя"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

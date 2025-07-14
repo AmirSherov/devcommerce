@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import DashboardLayout from '../../../components/ui/dashboard-layout';
 import { getProjectDetail, getRecommendedProjects } from '../../../api/projectdetail/api';
 import { useEffect, useState } from 'react';
-import SimpleLoader from '@/components/simple-loader';
+import Loader from '@/components/simple-loader';
 import { getAuthToken } from '@/lib/auth-utils';
 import Link from 'next/link';
 import { FaArrowRight, FaArrowLeft } from "react-icons/fa";
@@ -33,7 +33,11 @@ function ProjectDetailViewPage() {
     }, [id]);
 
     if (isLoading || !project) {
-        return <SimpleLoader />;
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+            <Loader text="Загрузка проекта..." fullScreen={true} />
+          </div>
+        )
     }
 
     return (

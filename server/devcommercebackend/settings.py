@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'ai_generator',
     'portfolio_templates',
     'settings',
+    'storage',
+    'storagepublicapi'
 ]
 
 MIDDLEWARE = [
@@ -166,11 +168,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3005",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3005",
+    "https://uselessly-striving-leopardess.cloudpub.ru"
 ]
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Разрешаем кастомные заголовки
 CORS_ALLOW_HEADERS = [
     'accept',
+    'Access-Control-Allow-Origin',
     'accept-encoding',
     'authorization',
     'content-type',

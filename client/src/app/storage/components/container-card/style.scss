@@ -1,0 +1,241 @@
+.container-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: #000000;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+
+    .container-icon {
+      width: 48px;
+      height: 48px;
+      background: #000000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+
+      svg {
+        width: 24px;
+        height: 24px;
+        color: #ffffff;
+      }
+    }
+
+    .container-status {
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &.public {
+          background: #000000;
+          color: #ffffff;
+          border: 1px solid #333;
+        }
+
+        &.private {
+          background: #000000;
+          color: #888;
+          border: 1px solid #333;
+        }
+      }
+    }
+  }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .container-name {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .container-stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+
+        .stat-icon {
+          margin-bottom: 4px;
+
+          svg {
+            width: 16px;
+            height: 16px;
+            color: #ffffff;
+          }
+        }
+
+        .stat-value {
+          color: #ffffff;
+          font-size: 18px;
+          font-weight: 600;
+          line-height: 1;
+        }
+
+        .stat-label {
+          color: #888;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+
+    .container-meta {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .meta-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+
+        .meta-label {
+          color: #666;
+          font-weight: 500;
+        }
+
+        .meta-value {
+          color: #888;
+          font-weight: 400;
+        }
+      }
+    }
+  }
+}
+
+// Адаптивность
+@media (max-width: 768px) {
+  .container-card {
+    padding: 20px;
+
+    .card-header {
+      margin-bottom: 16px;
+
+      .container-icon {
+        width: 40px;
+        height: 40px;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    .card-body {
+      gap: 12px;
+
+      .container-name {
+        font-size: 18px;
+      }
+
+      .container-stats {
+        gap: 12px;
+
+        .stat-item {
+          .stat-value {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .container-card {
+    padding: 10px;
+    border-radius: 6px;
+
+    .card-header {
+      margin-bottom: 10px;
+      .container-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        svg {
+          width: 14px;
+          height: 14px;
+        }
+      }
+      .container-status .status-badge {
+        padding: 2px 8px;
+        font-size: 9px;
+        border-radius: 12px;
+      }
+    }
+    .card-body {
+      gap: 6px;
+      .container-name {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .container-stats {
+        gap: 6px;
+        .stat-item {
+          .stat-icon svg {
+            width: 11px;
+            height: 11px;
+          }
+          .stat-value {
+            font-size: 11px;
+          }
+          .stat-label {
+            font-size: 8px;
+          }
+        }
+      }
+      .container-meta {
+        gap: 4px;
+        .meta-item {
+          font-size: 9px;
+          .meta-label {
+            font-size: 9px;
+          }
+          .meta-value {
+            font-size: 9px;
+          }
+        }
+      }
+    }
+  }
+} 

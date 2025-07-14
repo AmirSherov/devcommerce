@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { templatesAPI, TEMPLATE_DIFFICULTIES, TEMPLATE_SORT_OPTIONS, getTemplateErrorMessage } from '../../../api/templates/api';
-import { aiAPI, getAIErrorMessage } from '../../../api/ai/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import UseTemplateModal from './components/usetemplate/usetemplate';
 import AIGenerateModal from './components/ai-generate/ai-generate-modal';
@@ -34,6 +33,7 @@ import {
   HiOutlineSparkles
 } from "react-icons/hi";
 import './style.scss';
+import Loader from '../../../components/simple-loader';
 interface Template {
   id: number;
   title: string;
@@ -289,6 +289,7 @@ export default function TemplatesPage() {
 
   return (
     <DashboardLayout activePage="templates">
+      {isGeneratingAI && <Loader text="Генерация..." fullScreen={true} />}
       <div className="templates-page">
       <section className="templates-hero">
         <div className="templates-container">
@@ -689,10 +690,11 @@ export default function TemplatesPage() {
       {/* AI Generate Modal */}
       <AIGenerateModal
         isOpen={showAIGenerateModal}
-        onClose={handleCloseAIGenerateModal}
+        onClose={() => setShowAIGenerateModal(false)}
         template={selectedTemplate}
         onSuccess={handleAIGenerateSuccess}
-        isLoading={isGeneratingAI}
+        isGeneratingAI={isGeneratingAI}
+        setIsGeneratingAI={setIsGeneratingAI}
       />
       </div>
     </DashboardLayout>

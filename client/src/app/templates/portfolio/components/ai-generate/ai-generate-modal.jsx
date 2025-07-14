@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { aiAPI, getAIErrorMessage, DEFAULT_USER_DATA_PLACEHOLDER } from '../../../../../api/ai/api';
 import './ai-generate-modal.scss';
-
+import Loader from '@/components/simple-loader';
 export default function AIGenerateModal({ 
   isOpen, 
   onClose, 
   template, 
   onSuccess, 
-  isLoading 
+  isGeneratingAI,
+  setIsGeneratingAI
 }) {
   const [formData, setFormData] = useState({
     projectTitle: '',
@@ -20,7 +21,6 @@ export default function AIGenerateModal({
   const [errors, setErrors] = useState({});
   const [userLimits, setUserLimits] = useState(null);
   const [loadingLimits, setLoadingLimits] = useState(true);
-
   // Загружаем лимиты пользователя при открытии модального окна
   useEffect(() => {
     if (isOpen) {
@@ -32,15 +32,10 @@ export default function AIGenerateModal({
     try {
       setLoadingLimits(true);
       const response = await aiAPI.getUserLimits();
-      console.log('🔍 Raw API Response:', response);
-      
-      // Извлекаем данные из поля data если оно есть
       const limits = response.data || response;
-      console.log('📊 Processed Limits:', limits);
       
       setUserLimits(limits);
     } catch (error) {
-      console.error('Ошибка загрузки лимитов:', error);
     } finally {
       setLoadingLimits(false);
     }
@@ -48,14 +43,13 @@ export default function AIGenerateModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Валидация
+    setIsGeneratingAI(true);
     const newErrors = {};
-    if (!formData.projectTitle.trim()) {
-      newErrors.projectTitle = 'Введите название проекта';
+    if (!formData.projectTitle.trim() || formData.projectTitle.trim().length < 3) {
+      newErrors.projectTitle = 'Название проекта слишком короткое (минимум 3 символа)';
     }
-    if (!formData.projectDescription.trim()) {
-      newErrors.projectDescription = 'Введите описание проекта';
+    if (!formData.projectDescription.trim() || formData.projectDescription.trim().length < 10) {
+      newErrors.projectDescription = 'Описание проекта слишком короткое (минимум 10 символов)';
     }
     if (!formData.userData.trim()) {
       newErrors.userData = 'Введите данные пользователя';
@@ -65,22 +59,26 @@ export default function AIGenerateModal({
 
     setErrors(newErrors);
 
-    // Если нет ошибок - отправляем данные
-    if (Object.keys(newErrors).length === 0) {
-      try {
-        const result = await aiAPI.generateTemplate(template.id, {
-          projectTitle: formData.projectTitle,
-          projectDescription: formData.projectDescription,
-          userData: formData.userData,
-        });
-        
-        if (result.success) {
-          onSuccess(result);
-          handleClose();
-        }
-      } catch (error) {
-        setErrors({ general: getAIErrorMessage(error) });
+    if (Object.keys(newErrors).length > 0) {
+      setIsGeneratingAI(false);
+      return;
+    }
+
+    handleClose(); // Закрываем модалку сразу после валидации
+
+    try {
+      const result = await aiAPI.generateTemplate(template.id, {
+        projectTitle: formData.projectTitle,
+        projectDescription: formData.projectDescription,
+        userData: formData.userData,
+      });
+      if (result.success) {
+        onSuccess(result);
       }
+    } catch (error) {
+      setErrors(error.message);
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
@@ -100,11 +98,10 @@ export default function AIGenerateModal({
   };
 
   const handleClose = () => {
-    if (!isLoading) {
-      setFormData({ projectTitle: '', projectDescription: '', userData: '' });
-      setErrors({});
-      onClose();
-    }
+    setFormData({ projectTitle: '', projectDescription: '', userData: '' });
+    setErrors({});
+    setIsGeneratingAI(false); // Всегда выключаем лоадер при закрытии
+    onClose();
   };
 
   const fillExampleData = () => {
@@ -115,20 +112,8 @@ export default function AIGenerateModal({
   };
 
   if (!isOpen) return null;
-
-  // Проверяем, может ли пользователь использовать AI
   const canUseAI = Boolean(userLimits?.can_generate);
   const isPremium = Boolean(userLimits?.is_premium);
-
-  console.log('🤖 AI Modal Debug:', {
-    userLimits,
-    canUseAI,
-    isPremium,
-    can_generate: userLimits?.can_generate,
-    is_premium: userLimits?.is_premium,
-    can_generate_type: typeof userLimits?.can_generate,
-    is_premium_type: typeof userLimits?.is_premium
-  });
 
   return (
     <div className="ai-generate-modal-overlay" onClick={handleClose}>
@@ -152,7 +137,7 @@ export default function AIGenerateModal({
           </div>
           <button 
             onClick={handleClose}
-            disabled={isLoading}
+            disabled={isGeneratingAI}
             className="modal-close-button"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -241,7 +226,7 @@ export default function AIGenerateModal({
                     onChange={(e) => handleChange('projectTitle', e.target.value)}
                     placeholder="Портфолио Frontend разработчика"
                     className={`field-input ${errors.projectTitle ? 'error' : ''}`}
-                    disabled={isLoading}
+                    disabled={isGeneratingAI}
                     maxLength={200}
                   />
                   {errors.projectTitle && (
@@ -263,7 +248,7 @@ export default function AIGenerateModal({
                     onChange={(e) => handleChange('projectDescription', e.target.value)}
                     placeholder="Профессиональное портфолио для демонстрации навыков и проектов"
                     className={`field-textarea ${errors.projectDescription ? 'error' : ''}`}
-                    disabled={isLoading}
+                    disabled={isGeneratingAI}
                     rows={3}
                     maxLength={1000}
                   />
@@ -285,7 +270,7 @@ export default function AIGenerateModal({
                       type="button"
                       onClick={fillExampleData}
                       className="example-button"
-                      disabled={isLoading}
+                      disabled={isGeneratingAI}
                     >
                       📝 Пример
                     </button>
@@ -296,7 +281,7 @@ export default function AIGenerateModal({
                     onChange={(e) => handleChange('userData', e.target.value)}
                     placeholder="Введите информацию о себе: имя, специализация, навыки, опыт работы, образование, проекты, контакты..."
                     className={`field-textarea large ${errors.userData ? 'error' : ''}`}
-                    disabled={isLoading}
+                    disabled={isGeneratingAI}
                     rows={12}
                     maxLength={5000}
                   />
@@ -337,7 +322,7 @@ export default function AIGenerateModal({
           <button
             type="button"
             onClick={handleClose}
-            disabled={isLoading}
+            disabled={isGeneratingAI}
             className="modal-button secondary"
           >
             Отмена
@@ -345,16 +330,10 @@ export default function AIGenerateModal({
           {canUseAI && (
             <button
               onClick={handleSubmit}
-              disabled={isLoading || !formData.projectTitle.trim() || !formData.projectDescription.trim() || !formData.userData.trim()}
+              disabled={!formData.projectTitle.trim() || !formData.projectDescription.trim() || !formData.userData.trim()}
               className="modal-button primary ai-button"
             >
-              {isLoading ? (
-                <>
-                  <div className="button-spinner"></div>
-                  AI генерирует...
-                </>
-              ) : (
-                <>
+              <>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                     <path d="M2 17l10 5 10-5"></path>
@@ -362,7 +341,6 @@ export default function AIGenerateModal({
                   </svg>
                   🤖 Создать с AI
                 </>
-              )}
             </button>
           )}
         </div>

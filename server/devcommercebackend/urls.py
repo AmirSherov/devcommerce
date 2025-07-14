@@ -28,8 +28,8 @@ urlpatterns = [
     path('api/portfolio/', include('portfolio.urls')),
     path('api/ai/', include('ai_generator.urls')),
     path('api/templates/', include('portfolio_templates.urls')),
-    
-    # Public portfolio site
+    path('api/storage/', include('storage.urls')),
+    path('api/remote/storage/', include('storagepublicapi.urls')),
     path('site/<uuid:portfolio_id>/', public_portfolio_site, name='public_portfolio_site'),
 ]
 

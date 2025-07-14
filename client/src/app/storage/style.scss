@@ -1,0 +1,340 @@
+.storage-page {
+  min-height: 100vh;
+  background: #000000;
+  color: #ffffff;
+  padding: 0;
+  margin: 0;
+}
+
+// Заголовок страницы
+.storage-header {
+  background: #000000;
+  border-bottom: 1px solid #333;
+  padding: 32px 0;
+  position: relative;
+
+  .header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+
+    .header-left {
+      .page-title {
+        font-size: 36px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+        color: #ffffff;
+      }
+
+      .page-description {
+        color: #888;
+        font-size: 16px;
+        margin: 0;
+        line-height: 1.5;
+      }
+    }
+
+    .header-right {
+      .create-button {
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid #333;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+  }
+
+  .storage-stats {
+    max-width: 1200px;
+    margin: 32px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+
+    .stat-card {
+      background: #000000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: #000000;
+        border: 1px solid #333;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+
+        svg {
+          width: 24px;
+          height: 24px;
+          color: #ffffff;
+        }
+      }
+
+      .stat-content {
+        flex: 1;
+
+        .stat-value {
+          font-size: 24px;
+          font-weight: 700;
+          color: #ffffff;
+          line-height: 1;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 14px;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+  }
+}
+
+// Основной контент
+.storage-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+
+  .error-message {
+    background: #000000;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    max-width: 480px;
+    margin: 0 auto;
+
+    .empty-icon {
+      margin-bottom: 24px;
+      opacity: 0.5;
+
+      svg {
+        width: 64px;
+        height: 64px;
+        color: #666;
+      }
+    }
+
+    h3 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #ffffff;
+      margin: 0 0 12px 0;
+    }
+
+    p {
+      color: #888;
+      font-size: 16px;
+      margin: 0 0 32px 0;
+      line-height: 1.5;
+    }
+
+    .create-first-button {
+      background: #000000;
+      color: #ffffff;
+      border: 1px solid #333;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  .containers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+  }
+}
+
+// Адаптивность
+@media (max-width: 768px) {
+  .storage-header {
+    padding: 24px 0;
+
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+
+      .header-left {
+        .page-title {
+          font-size: 28px;
+        }
+
+        .page-description {
+          font-size: 14px;
+        }
+      }
+
+      .header-right {
+        width: 100%;
+
+        .create-button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .storage-stats {
+      grid-template-columns: 1fr;
+      gap: 12px;
+
+      .stat-card {
+        padding: 16px;
+
+        .stat-icon {
+          width: 40px;
+          height: 40px;
+
+          svg {
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        .stat-content {
+          .stat-value {
+            font-size: 20px;
+          }
+        }
+      }
+    }
+  }
+
+  .storage-content {
+    padding: 24px 16px;
+
+    .containers-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+
+      h3 {
+        font-size: 20px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .storage-content {
+    padding: 12px 4px;
+    .containers-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .empty-state {
+      padding: 30px 4px;
+      h3 {
+        font-size: 14px;
+      }
+      p {
+        font-size: 10px;
+      }
+      .empty-icon svg {
+        width: 32px;
+        height: 32px;
+      }
+      .create-first-button {
+        font-size: 12px;
+        padding: 8px 16px;
+        border-radius: 6px;
+      }
+    }
+  }
+  .storage-header {
+    padding: 12px 0;
+    .header-content {
+      gap: 8px;
+      .header-left .page-title {
+        font-size: 18px;
+      }
+      .header-left .page-description {
+        font-size: 10px;
+      }
+      .header-right .create-button {
+        font-size: 12px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        svg {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+    .storage-stats {
+      gap: 6px;
+      .stat-card {
+        padding: 8px;
+        .stat-icon {
+          width: 20px;
+          height: 20px;
+          svg {
+            width: 10px;
+            height: 10px;
+          }
+        }
+        .stat-content .stat-value {
+          font-size: 11px;
+        }
+        .stat-content .stat-label {
+          font-size: 8px;
+        }
+      }
+    }
+  }
+} 

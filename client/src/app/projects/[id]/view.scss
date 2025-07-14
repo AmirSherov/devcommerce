@@ -774,66 +774,180 @@
   }
 }
 @media (max-width: 700px) {
-  .project-view-content, .project-view-comments {
-    padding: 16px 8px 12px 8px;
-  }
-  .project-view-card {
-    border-radius: 10px;
-  }
-  .project-view-sidebar {
-    margin-top: 18px;
-  }
-  .project-view-recommended-card {
-    border-radius: 8px;
-    padding: 6px 6px 6px 6px;
-  }
-  .project-view-recommended-img {
-    width: 44px;
-    height: 44px;
-  }
-  .project-view-main-nocard {
-    gap: 18px;
-  }
-  .project-view-cover-nocard {
-    border-radius: 10px;
-  }
-  .project-view-description-nocard, .project-view-comments-nocard {
-    padding: 12px 6px 10px 6px;
-    border-radius: 8px;
-  }
-  .project-view-sidebar-nocard {
-    margin-top: 18px;
-  }
-  .project-view-recommended-card-nocard {
-    border-radius: 8px;
-    padding: 6px 6px 6px 6px;
-  }
-  .project-view-recommended-img-nocard {
-    width: 44px;
-    height: 44px;
-  }
-  .project-view-main-flex {
-    gap: 18px;
+  .project-view-top-flex {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    justify-content: flex-start !important;
   }
   .project-view-image-block-flex {
-    border-radius: 10px;
-    min-width: 120px;
-    max-width: 100vw;
+    width: 120px !important;
+    min-width: 80px !important;
+    max-width: 120px !important;
+    aspect-ratio: 1/1 !important;
+    border-radius: 10px !important;
+    max-height: 120px !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
-  .project-view-description-flex, .project-view-comments-flex {
-    padding: 12px 6px 10px 6px;
+  .project-view-image-flex {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 120px !important;
+    border-radius: 10px !important;
+    object-fit: cover !important;
+  }
+  .project-view-info-flex {
+    flex: 1 1 0 !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .project-view-title-flex {
+    font-size: 1.3rem !important;
+    margin: 0 0 4px 0 !important;
+    line-height: 1.15 !important;
+  }
+  .project-view-meta-flex {
+    font-size: 0.95rem !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    span, .project-view-dot {
+      font-size: 0.95em !important;
+    }
+    svg {
+      width: 16px !important;
+      height: 16px !important;
+    }
+  }
+  .project-view-technologies-flex {
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  .project-view-tech-flex {
+    font-size: 0.85rem !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+  }
+  .project-view-links-flex {
+    gap: 8px !important;
+    a {
+      font-size: 0.95rem !important;
+      padding: 4px 12px !important;
+      border-radius: 6px !important;
+    }
+  }
+  .project-view-description-flex {
+    font-size: 0.95rem !important;
+    padding: 8px 0 8px 0 !important;
+    border-radius: 6px !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .project-view-root, .project-view-root-nocard, .project-view-root-flex {
+    padding: 10px 0 10px 0;
+    gap: 0;
+  }
+  .project-view-main, .project-view-main-nocard, .project-view-main-flex {
+    gap: 14px;
+    padding: 0;
+  }
+  .project-view-card, .project-view-card-nocard {
     border-radius: 8px;
   }
-  .project-view-sidebar-flex {
-    margin-top: 18px;
-  }
-  .project-view-recommended-card-flex {
+  .project-view-image, .project-view-image-nocard, .project-view-image-flex {
+    max-height: 180px;
     border-radius: 8px;
+  }
+  .project-view-content, .project-view-comments, .project-view-content-nocard, .project-view-comments-nocard, .project-view-content-flex, .project-view-comments-flex {
+    padding: 14px 8px 10px 8px;
+    border-radius: 8px;
+    gap: 12px;
+  }
+  .project-view-title, .project-view-title-nocard, .project-view-title-flex {
+    font-size: 1.2rem;
+    margin: 0 0 4px 0;
+  }
+  .project-view-author, .project-view-author-nocard, .project-view-author-flex {
+    font-size: 0.9rem;
+  }
+  .project-view-date, .project-view-date-nocard, .project-view-date-flex {
+    font-size: 0.9rem;
+  }
+  .project-view-technologies, .project-view-technologies-nocard, .project-view-technologies-flex {
+    gap: 6px;
+  }
+  .project-view-tech, .project-view-tech-nocard, .project-view-tech-flex {
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  .project-view-description, .project-view-description-nocard, .project-view-description-flex {
+    font-size: 0.95rem;
+    padding: 8px 4px 6px 4px;
+    border-radius: 6px;
+  }
+  .project-view-links, .project-view-links-nocard, .project-view-links-flex {
+    gap: 8px;
+    a {
+      font-size: 0.95rem;
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+  }
+  .project-view-stats, .project-view-meta-nocard, .project-view-meta-flex {
+    font-size: 0.95rem;
+    gap: 8px;
+    span, .project-view-dot {
+      font-size: 0.95em;
+    }
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+  .project-view-comments, .project-view-comments-nocard, .project-view-comments-flex {
+    padding: 10px 6px 8px 6px;
+    border-radius: 8px;
+  }
+  .project-view-sidebar, .project-view-sidebar-nocard, .project-view-sidebar-flex {
+    margin-top: 10px;
+    gap: 10px;
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+  .project-view-recommended-card, .project-view-recommended-card-nocard, .project-view-recommended-card-flex {
+    border-radius: 6px;
     padding: 6px 6px 6px 6px;
-    min-height: 56px;
+    min-height: 40px;
+    gap: 8px;
   }
-  .project-view-recommended-img-flex {
-    width: 38px;
-    height: 38px;
+  .project-view-recommended-img, .project-view-recommended-img-nocard, .project-view-recommended-img-flex {
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+  }
+  .project-view-recommended-title, .project-view-recommended-title-nocard, .project-view-recommended-title-flex {
+    font-size: 0.95rem;
+  }
+  .project-view-recommended-author, .project-view-recommended-author-nocard, .project-view-recommended-author-flex {
+    font-size: 0.85rem;
+  }
+  .project-view-recommended-arrow-flex {
+    font-size: 1rem;
+    right: 6px;
+  }
+  .icon-eye {
+    font-size: 1em;
   }
 }

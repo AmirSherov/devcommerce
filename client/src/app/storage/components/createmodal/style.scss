@@ -1,0 +1,231 @@
+.create-container-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.create-container-modal {
+  background: #000000;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 32px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h2 {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.modal-form {
+  .form-group {
+    margin-bottom: 24px;
+
+    label {
+      display: block;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: #000000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 16px;
+      outline: none;
+
+      &::placeholder {
+        color: #666;
+      }
+
+      &:focus {
+        border-color: #333;
+        background: #000000;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .checkbox-group {
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin-bottom: 8px;
+
+      .checkbox-input {
+        display: none;
+      }
+
+      .checkbox-custom {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #333;
+        border-radius: 4px;
+        margin-right: 12px;
+        position: relative;
+        background: #000000;
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 2px;
+          left: 6px;
+          width: 6px;
+          height: 10px;
+          border: solid #ffffff;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+          opacity: 0;
+        }
+      }
+
+      .checkbox-text {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .checkbox-input:checked + .checkbox-custom {
+        border-color: #333;
+        background: #000000;
+
+        &::after {
+          opacity: 1;
+        }
+      }
+    }
+
+    .checkbox-description {
+      color: #888;
+      font-size: 14px;
+      margin: 0;
+      margin-left: 32px;
+    }
+  }
+
+  .error-message {
+    background: #000000;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 32px;
+
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      outline: none;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .cancel-button {
+      background: #000000;
+      color: #888;
+      border: 1px solid #333;
+    }
+
+    .create-button {
+      background: #000000;
+      color: #ffffff;
+      border: 1px solid #333;
+    }
+  }
+}
+
+// Адаптивность
+@media (max-width: 768px) {
+  .create-container-modal {
+    width: 95%;
+    padding: 24px;
+
+    .modal-header {
+      h2 {
+        font-size: 20px;
+      }
+    }
+
+    .modal-form {
+      .form-group {
+        margin-bottom: 20px;
+
+        .form-input {
+          padding: 10px 14px;
+          font-size: 14px;
+        }
+      }
+
+      .modal-actions {
+        flex-direction: column;
+
+        button {
+          width: 100%;
+          padding: 14px 24px;
+        }
+      }
+    }
+  }
+} 
