@@ -7,72 +7,64 @@ from django.utils import timezone
 from rest_framework import authentication
 from rest_framework.exceptions import AuthenticationFailed
 from .models import PublicAPIKey
+from django.contrib.auth import get_user_model
+from authentication.authentication import JWTAuthentication
+User = get_user_model()
 
 
 class PublicAPIAuthentication(authentication.BaseAuthentication):
     """
-    🔑 АУТЕНТИФИКАЦИЯ ДЛЯ ПУБЛИЧНОГО API
-    
-    Проверяет API ключи и подписи запросов
+    🔑 АУТЕНТИФИКАЦИЯ ДЛЯ ПУБЛИЧНОГО API (JWT или X-API-KEY)
     """
-    
-    def authenticate(self, request: HttpRequest) -> Optional[Tuple[PublicAPIKey, None]]:
-        """Аутентификация по API ключу"""
-        
-        # Получаем API ключ из заголовка
+    def authenticate(self, request: HttpRequest) -> Optional[Tuple[object, None]]:
+        # 1. Если есть X-API-KEY — PublicAPIKey
         api_key = request.META.get('HTTP_X_API_KEY')
-        if not api_key:
-            return None
-        
-        try:
-            # Находим API ключ
-            public_api_key = PublicAPIKey.objects.select_related('container__user').get(
-                api_key=api_key,
-                is_active=True
-            )
-            
-            # Проверяем возможность выполнения запроса
-            can_request, message = public_api_key.can_make_request()
-            if not can_request:
-                raise AuthenticationFailed(message)
-            
-            # Проверяем подпись запроса (если есть)
-            if not self._verify_signature(request, public_api_key):
-                raise AuthenticationFailed("Неверная подпись запроса")
-            
-            # Обновляем статистику использования
-            public_api_key.update_usage()
-            
-            return (public_api_key, None)
-            
-        except PublicAPIKey.DoesNotExist:
-            raise AuthenticationFailed("Неверный API ключ")
-        except Exception as e:
-            raise AuthenticationFailed(f"Ошибка аутентификации: {str(e)}")
+        if api_key:
+            try:
+                public_api_key = PublicAPIKey.objects.select_related('container__user').get(
+                    api_key=api_key,
+                    is_active=True
+                )
+                can_request, message = public_api_key.can_make_request()
+                if not can_request:
+                    raise AuthenticationFailed(message)
+                if not self._verify_signature(request, public_api_key):
+                    raise AuthenticationFailed("Неверная подпись запроса")
+                public_api_key.update_usage()
+                return (public_api_key, None)
+            except PublicAPIKey.DoesNotExist:
+                raise AuthenticationFailed("Неверный API ключ")
+            except Exception as e:
+                raise AuthenticationFailed(f"Ошибка аутентификации: {str(e)}")
+        # 2. Если есть JWT (Authorization: Bearer ...)
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        if auth_header and auth_header.lower().startswith('bearer '):
+            jwt_auth = JWTAuthentication()
+            user_auth_tuple = jwt_auth.authenticate(request)
+            if user_auth_tuple:
+                user, _ = user_auth_tuple
+                if user and user.is_authenticated:
+                    return (user, None)
+        return None
     
     def _verify_signature(self, request: HttpRequest, api_key: PublicAPIKey) -> bool:
         """Проверка подписи запроса"""
-        
-        # Получаем подпись из заголовка
         signature = request.META.get('HTTP_X_SIGNATURE')
         if not signature:
-            return True  # Подпись необязательна для простых запросов
+            return True
         
-        # Получаем timestamp
         timestamp = request.META.get('HTTP_X_TIMESTAMP')
         if not timestamp:
             return False
-        
-        # Проверяем время запроса (не старше 5 минут)
+
         try:
             request_time = int(timestamp)
             current_time = int(time.time())
-            if abs(current_time - request_time) > 300:  # 5 минут
+            if abs(current_time - request_time) > 300:
                 return False
         except ValueError:
             return False
-        
-        # Создаем подпись для проверки
+
         message = f"{request.method}{request.path}{timestamp}"
         expected_signature = hmac.new(
             api_key.api_secret.encode('utf-8'),
@@ -93,15 +85,11 @@ class PublicAPIPermission:
     
     def has_permission(self, request, view):
         """Проверка разрешений для API ключа"""
-        
-        api_key = request.user  # В нашем случае user = PublicAPIKey
-        
-        # Проверяем план пользователя
+        api_key = request.user
         user_plan = api_key.container.user.plan
         if user_plan == 'standard':
-            return False  # Standard пользователи не имеют API доступа
+            return False
         
-        # Проверяем конкретные разрешения
         if self.required_permissions:
             api_permissions = api_key.permissions or {}
             for permission in self.required_permissions:
@@ -115,6 +103,15 @@ def get_api_key_from_request(request) -> Optional[PublicAPIKey]:
     """Получение API ключа из запроса"""
     if hasattr(request, 'user') and isinstance(request.user, PublicAPIKey):
         return request.user
+    elif hasattr(request, 'user') and hasattr(request.user, 'is_authenticated') and request.user.is_authenticated:
+        container_id = request.GET.get('container_id')
+        if container_id:
+            try:
+                from storage.models import StorageContainer
+                container = StorageContainer.objects.get(id=container_id, user=request.user)
+                return PublicAPIKey.objects.filter(container=container).first()
+            except (StorageContainer.DoesNotExist, PublicAPIKey.DoesNotExist):
+                pass
     return None
 
 
@@ -122,13 +119,18 @@ def log_api_request(request, response, api_key: PublicAPIKey, start_time: float)
     """Логирование API запроса"""
     from .models import PublicAPIRequest
     
-    # Вычисляем время ответа
     response_time = time.time() - start_time
     
-    # Определяем статус
     is_success = 200 <= response.status_code < 400
+    error_message = ''
+    error_code = ''
     
-    # Создаем запись о запросе
+    if hasattr(response, 'data') and response.data:
+        error_message = str(response.data.get('error', ''))
+        error_code = str(response.data.get('error_code', ''))
+    elif not is_success:
+        error_message = f"HTTP {response.status_code}"
+    
     PublicAPIRequest.objects.create(
         api_key=api_key,
         method=request.method,
@@ -139,17 +141,18 @@ def log_api_request(request, response, api_key: PublicAPIKey, start_time: float)
         request_size=len(request.body) if request.body else 0,
         response_size=len(response.content) if hasattr(response, 'content') else 0,
         response_time=response_time,
-        error_message='' if is_success else str(response.data.get('error', '')),
-        error_code='' if is_success else str(response.data.get('error_code', ''))
+        error_message=error_message,
+        error_code=error_code
     )
-    
-    # Обновляем ежедневную статистику
-    update_daily_stats(api_key, is_success, response_time)
+    update_daily_stats(api_key, is_success, response_time, request.path)
 
 
-def update_daily_stats(api_key: PublicAPIKey, is_success: bool, response_time: float):
+def update_daily_stats(api_key: PublicAPIKey, is_success: bool, response_time: float, endpoint: str):
     """Обновление ежедневной статистики"""
+    import logging
     from .models import PublicAPIUsage
+    
+    logger = logging.getLogger(__name__)
     
     today = timezone.now().date()
     
@@ -176,15 +179,9 @@ def update_daily_stats(api_key: PublicAPIKey, is_success: bool, response_time: f
         usage.successful_requests += 1
     else:
         usage.failed_requests += 1
-    
-    # Обновляем время ответа
     usage.total_response_time += response_time
     usage.average_response_time = usage.total_response_time / usage.total_requests
-    
-    # Обновляем популярные эндпоинты
     endpoints = usage.popular_endpoints or {}
-    current_endpoint = f"{api_key.container.name}:{api_key.container.id}"
-    endpoints[current_endpoint] = endpoints.get(current_endpoint, 0) + 1
+    endpoints[endpoint] = endpoints.get(endpoint, 0) + 1
     usage.popular_endpoints = endpoints
-    
-    usage.save() 
+    usage.save()

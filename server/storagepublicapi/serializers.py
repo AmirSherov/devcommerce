@@ -93,49 +93,61 @@ class PublicFileUploadSerializer(serializers.Serializer):
 class PublicFileListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка файлов через API"""
     
+    url = serializers.SerializerMethodField()
     file_size_mb = serializers.ReadOnlyField()
     is_image = serializers.ReadOnlyField()
     is_video = serializers.ReadOnlyField()
     is_document = serializers.ReadOnlyField()
-    download_url = serializers.SerializerMethodField()
     
     class Meta:
         model = StorageFile
         fields = [
             'id', 'filename', 'file_size_mb', 'mime_type', 'is_public',
-            'is_image', 'is_video', 'is_document', 'download_url', 'created_at'
+            'is_image', 'is_video', 'is_document', 'url', 'created_at'
         ]
     
-    def get_download_url(self, obj):
-        """Генерирует URL для скачивания файла"""
-        if obj.is_public:
-            return f"/api/public/storage/files/{obj.id}/download/"
-        return None
+    def get_url(self, obj):
+        """Генерирует свежую ссылку на файл"""
+        from .s3_utils import get_file_url_from_public_s3
+        
+        # Получаем S3 ключ файла
+        s3_key = obj.s3_key if hasattr(obj, 's3_key') else obj.file.name
+        
+        # Генерируем свежую ссылку с увеличенным временем жизни (24 часа)
+        fresh_url = get_file_url_from_public_s3(s3_key, expiration=86400)
+        
+        return fresh_url if fresh_url else None
 
 
 class PublicFileDetailSerializer(serializers.ModelSerializer):
     """Сериализатор для детальной информации о файле"""
     
+    url = serializers.SerializerMethodField()
     file_size_mb = serializers.ReadOnlyField()
     is_image = serializers.ReadOnlyField()
     is_video = serializers.ReadOnlyField()
     is_document = serializers.ReadOnlyField()
-    download_url = serializers.SerializerMethodField()
     
     class Meta:
         model = StorageFile
         fields = [
             'id', 'filename', 'original_filename', 'file_size_mb',
             'mime_type', 'file_extension', 'is_public',
-            'is_image', 'is_video', 'is_document', 'download_url',
+            'is_image', 'is_video', 'is_document', 'url',
             'created_at', 'updated_at'
         ]
     
-    def get_download_url(self, obj):
-        """Генерирует URL для скачивания файла"""
-        if obj.is_public:
-            return f"/api/public/storage/files/{obj.id}/download/"
-        return None
+    def get_url(self, obj):
+        """Генерирует свежую ссылку на файл"""
+        from .s3_utils import get_file_url_from_public_s3
+        
+        # Получаем S3 ключ файла
+        s3_key = obj.s3_key if hasattr(obj, 's3_key') else obj.file.name
+        
+        # Генерируем свежую ссылку с увеличенным временем жизни (24 часа)
+        fresh_url = get_file_url_from_public_s3(s3_key, expiration=86400)
+        
+        return fresh_url if fresh_url else None
 
 
 class PublicAPIStatsSerializer(serializers.Serializer):

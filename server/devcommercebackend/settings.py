@@ -59,6 +59,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'portfolio.middleware.PortfolioSubdomainMiddleware',  # Обработка субдоменов портфолио
+    'storagepublicapi.middleware.PublicAPILoggingMiddleware',  # Логирование публичного API
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -184,6 +185,9 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
     'x-session-key',  # Добавляем наш кастомный заголовок
+    'x-api-key',  # API ключ для публичного API
+    'x-signature',  # Подпись для API
+    'x-timestamp',  # Timestamp для API
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

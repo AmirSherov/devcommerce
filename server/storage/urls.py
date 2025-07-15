@@ -7,6 +7,8 @@ urlpatterns = [
     # Контейнеры
     path('containers/', views.StorageContainerView.as_view(), name='containers'),
     path('containers/<uuid:container_id>/', views.StorageContainerDetailView.as_view(), name='container_detail'),
+    path('containers/<uuid:container_id>/stats/', views.ContainerStatsView.as_view(), name='container_stats'),
+    path('containers/<uuid:container_id>/logs/', views.ContainerApiLogsView.as_view(), name='container_logs'),
     
     # Файлы
     path('containers/<uuid:container_id>/upload/', views.StorageFileUploadView.as_view(), name='file_upload'),

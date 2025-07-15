@@ -46,7 +46,7 @@ class PublicAPIKey(models.Model):
     @staticmethod
     def generate_api_key():
         """Генерация уникального API ключа"""
-        return f"devhub_{uuid.uuid4().hex[:16]}"
+        return f"devcommerce_{uuid.uuid4().hex[:16]}"
     
     @staticmethod
     def generate_api_secret():
@@ -198,7 +198,7 @@ class PublicAPILimit(models.Model):
     max_files_per_request = models.IntegerField(help_text="Максимум файлов за запрос")
     
     # Лимиты хранилища
-    storage_limit_mb = models.IntegerField(help_text="Лимит хранилища в MB")
+    storage_limit_mb = models.IntegerField(null=True, blank=True, help_text="Лимит хранилища в MB (null = безлимитно)")
     
     # Дополнительные возможности
     api_access = models.BooleanField(default=False, help_text="Доступ к API")

@@ -1,0 +1,200 @@
+/* Улучшенный черный дизайн с современными акцентами и улучшенным UX */
+
+.api-docs-root {
+  display: flex;
+  background: #000000;
+  color: #eaeaea;
+  min-height: 80vh;
+  border-radius: 20px;
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.6);
+  font-family: 'Inter', sans-serif;
+}
+
+.api-docs-nav {
+  min-width: 260px;
+  background: #0d0d0d;
+  border-right: 1px solid #1a1a1a;
+  padding: 32px 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.api-docs-nav h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
+
+.api-docs-nav nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-docs-nav button {
+  background: none;
+  border: none;
+  color: #bbbbbb;
+  font-size: 1rem;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.api-docs-nav button.active,
+.api-docs-nav button:hover {
+  background: #1e1e1e;
+  color: #ffffff;
+  transform: scale(1.03);
+}
+
+.api-docs-content {
+  flex: 1;
+  padding: 40px 48px;
+  max-width: 900px;
+  color: #eaeaea;
+}
+
+.api-docs-content h1,
+.api-docs-content h2 {
+  color: #ffffff;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.api-docs-content h1 {
+  font-size: 2.5rem;
+  border-bottom: 2px solid #1a1a1a;
+  padding-bottom: 10px;
+}
+
+.api-docs-content h2 {
+  font-size: 1.6rem;
+  margin-top: 20px;
+}
+
+.api-docs-content section {
+  margin-bottom: 56px;
+}
+
+.api-docs-content ul {
+  margin: 12px 0 24px 24px;
+  color: #cfcfcf;
+}
+
+.code-block {
+  background: #0a0a0a;
+  color: #c3f3ff;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  padding: 18px 24px;
+  margin: 18px 0 24px;
+  overflow-x: auto;
+  border: 1px solid #2a2a2a;
+  box-shadow: inset 0 0 10px #000;
+}
+
+.api-endpoint-block {
+  background: #0f0f0f;
+  border-left: 4px solid #292929;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+  transition: 0.2s ease;
+}
+
+.api-endpoint-block:hover {
+  border-left-color: #4db8ff;
+  background-color: #141414;
+}
+
+.api-endpoint-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.method {
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  background-color: #1a1a1a;
+  color: #00bfff;
+}
+
+.method-post {
+  background-color: #0055ff22;
+  color: #5599ff;
+}
+
+.method-get {
+  background-color: #00ff5522;
+  color: #66ff66;
+}
+
+.method-delete {
+  background-color: #ff002222;
+  color: #ff6666;
+}
+
+.param-type {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.api-limits-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.api-limits-table th,
+.api-limits-table td {
+  padding: 12px 16px;
+  border: 1px solid #222;
+  text-align: left;
+}
+
+.api-limits-table th {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.api-limits-table td {
+  background-color: #0a0a0a;
+  color: #dddddd;
+}
+
+@media (max-width: 900px) {
+  .api-docs-root {
+    flex-direction: column;
+  }
+
+  .api-docs-nav {
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #1a1a1a;
+    flex-direction: row;
+    gap: 0;
+    padding: 16px 8px;
+    overflow-x: auto;
+  }
+
+  .api-docs-nav nav {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .api-docs-content {
+    padding: 24px 16px;
+    max-width: 100%;
+  }
+}

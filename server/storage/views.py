@@ -14,6 +14,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+from rest_framework.pagination import PageNumberPagination
 
 from .models import (
     StorageContainer, StorageFile, UserStorageUsage, StorageAPILog
@@ -107,6 +108,19 @@ class StorageContainerView(APIView):
                 name=name,
                 is_public=serializer.validated_data.get('is_public', False)
             )
+            
+            # Автоматически создаем PublicAPIKey для контейнера
+            try:
+                from storagepublicapi.models import PublicAPIKey
+                PublicAPIKey.objects.create(
+                    container=container,
+                    permissions={},
+                    rate_limit_per_hour=1000,
+                    max_file_size_mb=100
+                )
+                logger.info(f"[STORAGE CONTAINER] Автоматически создан PublicAPIKey для контейнера '{name}'")
+            except Exception as e:
+                logger.warning(f"[STORAGE CONTAINER] Не удалось создать PublicAPIKey для контейнера '{name}': {str(e)}")
             
             # Обновляем статистику
             self._update_user_stats(request.user, 'container_created')
@@ -848,3 +862,101 @@ class StorageStatsView(APIView):
                 'success': False,
                 'error': 'Ошибка получения статистики'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ContainerStatsView(APIView):
+    """
+    📊 Детальная статистика по одному контейнеру
+    GET /api/storage/containers/<uuid:container_id>/stats/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, container_id):
+        user = request.user
+        container = get_object_or_404(StorageContainer, id=container_id, user=user, is_active=True)
+        files = StorageFile.objects.filter(container=container, is_active=True)
+        total_files = files.count()
+        total_size = files.aggregate(total=Sum('file_size'))['total'] or 0
+        total_size_mb = total_size / (1024 * 1024)
+        total_size_gb = total_size_mb / 1024
+        # По типам
+        images_count = files.filter(mime_type__startswith='image/').count()
+        videos_count = files.filter(mime_type__startswith='video/').count()
+        documents_count = files.filter(Q(mime_type__startswith='application/') | Q(mime_type__startswith='text/')).count()
+        other_files_count = total_files - images_count - videos_count - documents_count
+        # Популярные типы
+        popular_types = files.values('mime_type').annotate(count=Count('mime_type')).order_by('-count')[:5]
+        # Топ файлы по размеру
+        top_files = files.order_by('-file_size')[:5]
+        top_files_data = [
+            {
+                'filename': f.filename,
+                'size': f.file_size,
+                'url': f.file_url,
+                'uploaded_at': f.created_at,
+                'mime_type': f.mime_type
+            } for f in top_files
+        ]
+        # Последние загрузки
+        recent_uploads = files.order_by('-created_at')[:5]
+        recent_uploads_data = [
+            {
+                'filename': f.filename,
+                'size': f.file_size,
+                'date': f.created_at,
+                'mime_type': f.mime_type
+            } for f in recent_uploads
+        ]
+        # Usage по дням (за месяц)
+        today = timezone.now().date()
+        month_ago = today - timedelta(days=30)
+        usage_stats = UserStorageUsage.objects.filter(user=user, date__gte=month_ago)
+        usage_by_day = [
+            {
+                'date': u.date,
+                'uploads': u.uploads_count,
+                'deletions': u.deletions_count,
+                'files_count': u.files_count,
+                'bytes_used': u.bytes_used
+            } for u in usage_stats.order_by('date')
+        ]
+        # file_types_stats (по дням)
+        file_types_by_day = [
+            {
+                'date': u.date,
+                'file_types_stats': u.file_types_stats
+            } for u in usage_stats.order_by('date')
+        ]
+        return Response({
+            'success': True,
+            'stats': {
+                'total_files': total_files,
+                'total_size_mb': round(total_size_mb, 2),
+                'total_size_gb': round(total_size_gb, 2),
+                'images_count': images_count,
+                'videos_count': videos_count,
+                'documents_count': documents_count,
+                'other_files_count': other_files_count,
+                'popular_file_types': list(popular_types),
+                'top_files': top_files_data,
+                'recent_uploads': recent_uploads_data,
+                'usage_by_day': usage_by_day,
+                'file_types_by_day': file_types_by_day,
+            }
+        })
+
+class ContainerApiLogsView(APIView, PageNumberPagination):
+    """
+    📝 Логи API по контейнеру
+    GET /api/storage/containers/<uuid:container_id>/logs/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    page_size = 20
+
+    def get(self, request, container_id):
+        user = request.user
+        container = get_object_or_404(StorageContainer, id=container_id, user=user, is_active=True)
+        logs = StorageAPILog.objects.filter(container=container).order_by('-created_at')
+        page = self.paginate_queryset(logs, request, view=self)
+        serializer = StorageAPILogSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)

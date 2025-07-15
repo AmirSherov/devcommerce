@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@heroicons/react": "^2.2.0",
-    "@tailwindcss/line-clamp": "^0.4.4"
-  }
-}

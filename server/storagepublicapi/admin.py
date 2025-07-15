@@ -97,24 +97,53 @@ class PublicAPILimitAdmin(admin.ModelAdmin):
     list_display = ['plan', 'requests_per_hour', 'requests_per_day', 'max_file_size_mb', 'api_access']
     list_filter = ['api_access', 'custom_domains', 'advanced_analytics']
     search_fields = ['plan']
+    readonly_fields = ['created_at', 'updated_at']
     
-    fieldsets = (
-        ('План', {
-            'fields': ('plan',)
-        }),
-        ('Лимиты запросов', {
-            'fields': ('requests_per_hour', 'requests_per_day')
-        }),
-        ('Лимиты файлов', {
-            'fields': ('max_file_size_mb', 'max_files_per_request')
-        }),
-        ('Лимиты хранилища', {
-            'fields': ('storage_limit_mb',)
-        }),
-        ('Дополнительные возможности', {
-            'fields': ('api_access', 'custom_domains', 'advanced_analytics')
-        }),
-        ('Временные метки', {
-            'fields': ('created_at', 'updated_at')
-        }),
-    )
+    def get_fieldsets(self, request, obj=None):
+        if obj and obj.plan == 'pro':
+            # Для Pro плана скрываем лимит хранилища
+            return (
+                ('План', {
+                    'fields': ('plan',)
+                }),
+                ('Лимиты запросов', {
+                    'fields': ('requests_per_hour', 'requests_per_day')
+                }),
+                ('Лимиты файлов', {
+                    'fields': ('max_file_size_mb', 'max_files_per_request')
+                }),
+                ('Дополнительные возможности', {
+                    'fields': ('api_access', 'custom_domains', 'advanced_analytics')
+                }),
+                ('Временные метки', {
+                    'fields': ('created_at', 'updated_at')
+                }),
+            )
+        else:
+            # Для других планов показываем лимит хранилища
+            return (
+                ('План', {
+                    'fields': ('plan',)
+                }),
+                ('Лимиты запросов', {
+                    'fields': ('requests_per_hour', 'requests_per_day')
+                }),
+                ('Лимиты файлов', {
+                    'fields': ('max_file_size_mb', 'max_files_per_request')
+                }),
+                ('Лимиты хранилища', {
+                    'fields': ('storage_limit_mb',)
+                }),
+                ('Дополнительные возможности', {
+                    'fields': ('api_access', 'custom_domains', 'advanced_analytics')
+                }),
+                ('Временные метки', {
+                    'fields': ('created_at', 'updated_at')
+                }),
+            )
+    
+    def save_model(self, request, obj, form, change):
+        # Для Pro плана автоматически устанавливаем storage_limit_mb в None
+        if obj.plan == 'pro':
+            obj.storage_limit_mb = None
+        super().save_model(request, obj, form, change)
